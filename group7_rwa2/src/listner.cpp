@@ -16,9 +16,9 @@
 // %Tag(INCLUDE_STATEMENTS)%
 #include <algorithm>
 #include <vector>
-
+#include <iostream>
 #include <ros/ros.h>
-
+#include <string>
 #include <osrf_gear/LogicalCameraImage.h>
 #include <osrf_gear/Order.h>
 #include <osrf_gear/Proximity.h>
@@ -29,11 +29,16 @@
 #include <std_msgs/String.h>
 #include <std_srvs/Trigger.h>
 #include <trajectory_msgs/JointTrajectory.h>
-#include <tf2_ros/transform_listener.h>
-#include <geometry_msgs/TransformStamped.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h> //--needed for tf2::Matrix3x3
-// %EndTag(INCLUDE_STATEMENTS)%
 
+// extra dependecies which might needed
+#include <tf2_ros/transform_listener.h>
+// #include <geometry_msgs/TransformStamped.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h> 
+using namespace std;
+
+
+
+// %EndTag(INCLUDE_STATEMENTS)%
 
 // %Tag(START_COMP)%
 /// Start the competition by waiting for and then calling the start ROS Service.
@@ -159,54 +164,90 @@ public:
   // %EndTag(ARM_ZERO)%
 
   /// Called when a new LogicalCameraImage message is received.
-  void logical_camera_callback(
-    const osrf_gear::LogicalCameraImage::ConstPtr & image_msg);
-
-
-/*
-    try{
-      transformStamped = tfBuffer.lookupTransform("world", "logical_camera_1_gasket_part_1_frame",
-                               ros::Time(0), timeout);
-    }
-    catch (tf2::TransformException &ex) {
-      ROS_WARN("%s",ex.what());
-      ros::Duration(1.0).sleep();
-      continue;
-    }
-*/
-    transformStamped = tfBuffer.lookupTransform("world", "logical_camera_1_gasket_part_1_frame",
-                               ros::Time(0), timeout);
-
-
-    // ROS_INFO("gasket_part_1 in world frame: [%f,%f,%f] [%f,%f,%f,%f]",transformStamped.transform.translation.x,
-    // transformStamped.transform.translation.y,
-    // transformStamped.transform.translation.z,
-    // transformStamped.transform.rotation.x,
-    // transformStamped.transform.rotation.y,
-    // transformStamped.transform.rotation.z,
-    // transformStamped.transform.rotation.w);
-    //--converting quaternions to rpy
-    tf2::Quaternion q(
-      transformStamped.transform.rotation.x,
-      transformStamped.transform.rotation.y,
-      transformStamped.transform.rotation.z,
-      transformStamped.transform.rotation.w);
-   tf2::Matrix3x3 m(q);
-   double roll, pitch, yaw;
-   m.getRPY(roll, pitch, yaw);
-
-   ROS_INFO("gasket_part_1 in world frame: [%f,%f,%f] [%f,%f,%f]",transformStamped.transform.translation.x,
-   transformStamped.transform.translation.y,
-   transformStamped.transform.translation.z,
-   roll,
-   pitch,
-   yaw);
-
-
-
+  void logical_camera_callback_4(
+    const osrf_gear::LogicalCameraImage::ConstPtr & image_msg)
   {
     ROS_INFO_STREAM_THROTTLE(10,
       "Logical camera: '" << image_msg->models.size() << "' objects.");
+
+
+    // modeify starts here
+    ros::Duration timeout(5.0);
+    tf2_ros::Buffer tfBuffer;
+    tf2_ros::TransformListener tfListener(tfBuffer);
+
+    int i = 1;
+    while (i <= image_msg->models.size()){
+      geometry_msgs::TransformStamped transformStamped;
+      string camera_frame_1 = "logical_camera_4_piston_rod_part_";
+      string camera_frame_2 = "_frame";
+      string camera_frame = camera_frame_1 + to_string(i) + camera_frame_2;
+      cout << "the fuckin i = " << camera_frame << endl;
+      transformStamped = tfBuffer.lookupTransform("world", camera_frame, ros::Time(0), timeout);
+      tf2::Quaternion q(
+        transformStamped.transform.rotation.x,
+        transformStamped.transform.rotation.y,
+        transformStamped.transform.rotation.z,
+        transformStamped.transform.rotation.w);
+      tf2::Matrix3x3 m(q);
+      double roll, pitch, yaw;
+      m.getRPY(roll, pitch, yaw);
+
+      ROS_INFO("piston_rod_part_%d in world frame: [%f,%f,%f] [%f,%f,%f]", i, transformStamped.transform.translation.x,
+      transformStamped.transform.translation.y,
+      transformStamped.transform.translation.z,
+      roll,
+      pitch,
+      yaw);
+      // increment for part number
+      i+=1;
+    }
+
+    cout << "------------------------------------------" << endl;
+
+  }
+
+  void logical_camera_callback_1(
+    const osrf_gear::LogicalCameraImage::ConstPtr & image_msg)
+  {
+    ROS_INFO_STREAM_THROTTLE(10,
+      "Logical camera: '" << image_msg->models.size() << "' objects.");
+
+
+    // modeify starts here
+    ros::Duration timeout(5.0);
+    tf2_ros::Buffer tfBuffer;
+    tf2_ros::TransformListener tfListener(tfBuffer);
+
+    int i = 1;
+    while (i <= image_msg->models.size()){
+      geometry_msgs::TransformStamped transformStamped;
+      string camera_frame_1 = "logical_camera_1_gasket_part_";
+      string camera_frame_2 = "_frame";
+      string camera_frame = camera_frame_1 + to_string(i) + camera_frame_2;
+      cout << "the fuckin i = " << camera_frame << endl;
+      transformStamped = tfBuffer.lookupTransform("world", camera_frame, ros::Time(0), timeout);
+      tf2::Quaternion q(
+        transformStamped.transform.rotation.x,
+        transformStamped.transform.rotation.y,
+        transformStamped.transform.rotation.z,
+        transformStamped.transform.rotation.w);
+      tf2::Matrix3x3 m(q);
+      double roll, pitch, yaw;
+      m.getRPY(roll, pitch, yaw);
+
+      ROS_INFO("gasket_part_%d in world frame: [%f,%f,%f] [%f,%f,%f]", i, transformStamped.transform.translation.x,
+      transformStamped.transform.translation.y,
+      transformStamped.transform.translation.z,
+      roll,
+      pitch,
+      yaw);
+      // increment for part number
+      i+=1;
+    }
+
+    cout << "------------------------------------------" << endl;
+
   }
 
   /// Called when a new Proximity message is received.
@@ -252,10 +293,6 @@ int main(int argc, char ** argv) {
   // Instance of custom class from above.
   MyCompetitionClass comp_class(node);
 
-  tf2_ros::Buffer tfBuffer;
-  tf2_ros::TransformListener tfListener(tfBuffer);
-  geometry_msgs::TransformStamped transformStamped;
-
   // Subscribe to the '/ariac/current_score' topic.
   ros::Subscriber current_score_subscriber = node.subscribe(
     "/ariac/current_score", 10,
@@ -294,9 +331,16 @@ int main(int argc, char ** argv) {
     &MyCompetitionClass::break_beam_callback, &comp_class);
 
   // Subscribe to the '/ariac/logical_camera_1' topic.
-  ros::Subscriber logical_camera_subscriber = node.subscribe(
+
+  ros::Subscriber logical_camera_subscriber_1 = node.subscribe(
     "/ariac/logical_camera_1", 10,
-    &MyCompetitionClass::logical_camera_callback, &comp_class);
+    &MyCompetitionClass::logical_camera_callback_1, &comp_class);
+
+
+  // Add an extra subsciber node to logical_camera_4
+  ros::Subscriber logical_camera_subscriber_4 = node.subscribe(
+    "/ariac/logical_camera_4", 10,
+    &MyCompetitionClass::logical_camera_callback_4, &comp_class);
 
 
   // Subscribe to the '/ariac/laser_profiler_1' topic.
@@ -311,4 +355,3 @@ int main(int argc, char ** argv) {
 }
 // %EndTag(MAIN)%
 // %EndTag(FULLTEXT)%
-

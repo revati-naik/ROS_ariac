@@ -9,6 +9,11 @@ project(group7_rwa2)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  std_msgs
+  	osrf_gear
+	sensor_msgs
+	std_srvs
+	trajectory_msgs
 )
 
 ## System dependencies are found with CMake's conventions
