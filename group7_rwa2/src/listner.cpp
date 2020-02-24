@@ -182,7 +182,7 @@ public:
       string camera_frame_1 = "logical_camera_4_piston_rod_part_";
       string camera_frame_2 = "_frame";
       string camera_frame = camera_frame_1 + to_string(i) + camera_frame_2;
-      cout << "the fuckin i = " << camera_frame << endl;
+      cout << " Part name and pose = " << camera_frame << endl;
       transformStamped = tfBuffer.lookupTransform("world", camera_frame, ros::Time(0), timeout);
       tf2::Quaternion q(
         transformStamped.transform.rotation.x,
@@ -225,7 +225,7 @@ public:
       string camera_frame_1 = "logical_camera_1_gasket_part_";
       string camera_frame_2 = "_frame";
       string camera_frame = camera_frame_1 + to_string(i) + camera_frame_2;
-      cout << "the fuckin i = " << camera_frame << endl;
+      cout << "Part name and pose = " << camera_frame << endl;
       transformStamped = tfBuffer.lookupTransform("world", camera_frame, ros::Time(0), timeout);
       tf2::Quaternion q(
         transformStamped.transform.rotation.x,
