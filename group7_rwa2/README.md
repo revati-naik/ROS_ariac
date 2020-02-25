@@ -3,7 +3,7 @@
 This is README to run the ROS package created for RWA2. 
 
 ## **Package Name: group7_rwa2**
-This package consists of a listner (ROS Program) to get the sensor/camera data from the Ariac environment on the screen. 
+This package consists of a listener (ROS Subcriber) to get the sensor/camera data from the Ariac environment on the screen. 
 
 
 ## **Dependencies**

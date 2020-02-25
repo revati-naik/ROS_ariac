@@ -3,7 +3,7 @@ ENPM809B: Manufacturing Robot Software System: RWA-2
 This is README to run the ROS package created for RWA2. 
 
 Package Name: group7_rwa2
-This package consists of a listner (ROS Program) to get the sensor/camera data from the Ariac environment on the screen. 
+This package consists of a listener (ROS Subcriber) to get the sensor/camera data from the Ariac environment on the screen. 
 
 
 Dependencies
@@ -14,7 +14,7 @@ Dependencies
 How to build
 1. Create and build a catkin workspace
 
-      `mkdir -p ~/catkin_ws/src`
+      `mkdir -p ~/catkin_ws/src`																	
        
       `cd ~/catkin_ws/`
         
