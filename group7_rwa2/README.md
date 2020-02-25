@@ -3,6 +3,8 @@
 This is README to run the ROS package created for RWA2. 
 
 ## **Package Name: group7_rwa2**
+This package consists of a listner (ROS Program) to get the sensor/camera data on the screen. 
+
 
 ## **Dependencies**
   * ROS Melodic 
