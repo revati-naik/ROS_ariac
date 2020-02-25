@@ -18,7 +18,7 @@ This is README to run the ROS package created for RWA2.
  
  
  
-   2. Extract the package in Catkin Workspace
+2.  Extract the package in Catkin Workspace
 
          `cd ~/catkin_ws/src/group7_rwa2`
          
@@ -43,4 +43,4 @@ This is README to run the ROS package created for RWA2.
 
 To run the environment and the listener node, open another terminal and run the following command
 
-`roslaunch group7_rwa2 group7-rwa2.launch`
+`roslaunch group7_rwa2 group7_rwa2.launch`
