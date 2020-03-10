@@ -396,7 +396,7 @@ int main(int argc, char ** argv) {
 
   if (plan_success_) {
         move_group.move();
-        ros::Duration(1.5).sleep();
+        ros::Duration(0.5).sleep();
   }
   //  ros::Duration(2.0).sleep();
 
@@ -417,7 +417,7 @@ int main(int argc, char ** argv) {
   ROS_INFO_NAMED("tutorial", "Visualizing plan 1 (pose goal) %s", success ? "" : "FAILED");
 
   move_group.move();
-  ros::Duration(1.5).sleep();
+  ros::Duration(0.5).sleep();
 
   // target pose
   target_pose1.orientation.w = 0.707;
@@ -436,7 +436,7 @@ int main(int argc, char ** argv) {
   ROS_INFO_NAMED("tutorial", "Visualizing plan 1 (pose goal) %s", success1 ? "" : "FAILED");
 
   move_group.move();
-  ros::Duration(1.0).sleep();
+//  ros::Duration(1.0).sleep();
 
   geometry_msgs::Pose grab_pose;
   geometry_msgs::Pose throw_away_pose;
@@ -450,7 +450,7 @@ int main(int argc, char ** argv) {
 
   grab_pose = target_pose1;
   throw_away_pose = target_pose1;
-  grab_pose.position.z = 0.93;
+  grab_pose.position.z = 0.928;
 
   while (ros::ok()){
         std::cout << "pickUpObject: " << pickUpObject.pickUpNumber << std::endl;
@@ -468,32 +468,52 @@ int main(int argc, char ** argv) {
             // ros::Duration(0.1).sleep();
             GripperToggle(true);
             grab_now = false;
-            pickUpObject.busyFlag == false;
+            pickUpObject.busyFlag = false;
 
             if (gripper_state_){
                 ROS_INFO("gripper attached, will go back now.");
-                throw_away_pose.position.z =1.5;
-                throw_away_pose.position.x =-0.2;
-                throw_away_pose.position.y =1;
+
+
+				throw_away_pose.position.z = 1.2;
+				move_group.setPoseTarget(throw_away_pose);
+				moveit::planning_interface::MoveGroupInterface::Plan throw_plan;
+
+				bool success34 = (move_group.plan(throw_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+				ROS_INFO_NAMED("tutorial", "Visualizing plan 1 (pose goal) %s", success34 ? "" : "FAILED");
+				move_group.move();
+
+
+				throw_away_pose.position.x = 0.25;
+				throw_away_pose.position.y = 1;
 
                 move_group.setPoseTarget(throw_away_pose);
-                moveit::planning_interface::MoveGroupInterface::Plan throw_plan;
 
-                bool success34 = (move_group.plan(throw_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+                success34 = (move_group.plan(throw_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
                 ROS_INFO_NAMED("tutorial", "Visualizing plan 1 (pose goal) %s", success34 ? "" : "FAILED");
 
                 move_group.move();
-                ros::Duration(1.0).sleep();
+                ros::Duration(0.5).sleep();
                 ROS_INFO("going back.");
 
                 GripperToggle(false);
-                pickUpObject.pickUpNumber = 5;
             }
 
-            move_group.setPoseTarget(target_pose1);
+            throw_away_pose = target_pose1;
+            throw_away_pose.position.z =1.2;
+
+            move_group.setPoseTarget(throw_away_pose);
             moveit::planning_interface::MoveGroupInterface::Plan back_plan;
 
             bool success54 = (move_group.plan(back_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+            ROS_INFO_NAMED("tutorial", "Visualizing plan 1 (pose goal) %s", success54 ? "" : "FAILED");
+
+            move_group.move();
+
+
+            move_group.setPoseTarget(target_pose1);
+//            moveit::planning_interface::MoveGroupInterface::Plan back_plan;
+
+            success54 = (move_group.plan(back_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
             ROS_INFO_NAMED("tutorial", "Visualizing plan 1 (pose goal) %s", success54 ? "" : "FAILED");
 
             move_group.move();
