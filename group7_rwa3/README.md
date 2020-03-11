@@ -20,7 +20,7 @@ This package consists of a listener (ROS Subcriber) to read the order data once 
        
       `cd ~/catkin_ws/`
 
-2.  Extract the package in Catkin Workspace
+2.  Extract the package to `~/catkin_ws/src/` as below
 
       `cd ~/catkin_ws/src/group7_rwa3`
          
