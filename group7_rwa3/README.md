@@ -22,7 +22,7 @@ This package consists of a listener (ROS Subcriber) to read the order data once 
 
 2.  Extract the package to `~/catkin_ws/src/` as below
 
-      `cd ~/catkin_ws/src/group7_rwa3`
+      `~/catkin_ws/src/group7_rwa3`
          
 3. Source the setup.bash to add environment variables to your path to allow ROS to function
 
