@@ -12,9 +12,10 @@ This package consists of a listener (ROS Subcriber) to read the order data once 
   * Ariac 2019
   * Ubuntu Desktop 18.04 Bionic (64-bit)
   * moveit
-  You should also have moveit_visual_tools installed if not installed previously. Use the below command to install moveit_visual_tools for ros-melodic
-  * sudo apt-get install ros-melodic-moveit-visual-tools
+## moveit_visual_tools
+You should also have moveit_visual_tools installed if not installed previously. moveit_visual_tools is not installed by default using installation instructions on ariac 2019 website. Use the below command to install moveit_visual_tools for ros-melodic
 
+  * sudo apt-get install ros-melodic-moveit-visual-tools
 
 ## **Instructions to RUN the package**
 1. Create and build a catkin workspace
