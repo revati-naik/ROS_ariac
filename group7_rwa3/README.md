@@ -56,9 +56,12 @@ To run the environment and the listener node, open another terminal and run the 
 Ensure that you are inside your workspace directory
    In terminal 1:
 
-     `cd ~/catkin_ws`
-     `source devel/setup.bash`
-     `roslaunch group7_rwa3 group7_rwa3.launch`
+   `cd ~/catkin_ws`
+   
+   `source devel/setup.bash`
+   
+   `roslaunch group7_rwa3 group7_rwa3.launch`
+   
    
    In terminal 2 (For starting motionplanning for arms through Moveit):
 
@@ -70,11 +73,11 @@ Ensure that you are inside your workspace directory
 
    In terminal 3:
 
-    `cd ~/catkin_ws`
+   `cd ~/catkin_ws`
      
-    `source devel/setup.bash`
+   `source devel/setup.bash`
     
-    `rosrun group7_rwa3 listener`
+   `rosrun group7_rwa3 listener`
 
 
 
