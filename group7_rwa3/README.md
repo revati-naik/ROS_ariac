@@ -70,7 +70,7 @@ Ensure that you are inside your workspace directory
 
    In terminal 3:
 
-     cd ~/catkin_ws`
+    `cd ~/catkin_ws`
      
     `source devel/setup.bash`
     
