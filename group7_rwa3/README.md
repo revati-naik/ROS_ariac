@@ -11,6 +11,9 @@ This package consists of a listener (ROS Subcriber) to read the order data once 
   * Gazebo >= 9.6.0 
   * Ariac 2019
   * Ubuntu Desktop 18.04 Bionic (64-bit)
+  * moveit
+  You should also have moveit_visual_tools installed if not installed previously. Use the below command to install moveit_visual_tools for ros-melodic
+  * sudo apt-get install ros-melodic-moveit-visual-tools
 
 
 ## **Instructions to RUN the package**
