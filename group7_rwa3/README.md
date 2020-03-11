@@ -71,7 +71,9 @@ Ensure that you are inside your workspace directory
    In terminal 3:
 
      cd ~/catkin_ws`
+     
     `source devel/setup.bash`
+    
     `rosrun group7_rwa3 listener`
 
 
