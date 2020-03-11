@@ -62,9 +62,11 @@ Ensure that you are inside your workspace directory
    
    In terminal 2 (For starting motionplanning for arms through Moveit):
 
-    `cd ~/catkin_ws`
-    `source install/setup.bash`
-    `roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm1`
+   `cd ~/catkin_ws`
+    
+   `source install/setup.bash`
+    
+   `roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm1`
 
    In terminal 3:
 
