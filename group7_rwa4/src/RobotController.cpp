@@ -18,7 +18,7 @@ RobotController::RobotController(std::string arm_id) :
 {
     ros::AsyncSpinner armSpinner(0);
     armSpinner.start();
-    ROS_WARN(">>>>> RobotController");
+    ROS_WARN("[RobotController]:[Constructor]: Called Class");
 
     robot_move_group_.setPlanningTime(100);
     robot_move_group_.setNumPlanningAttempts(10);
@@ -142,8 +142,7 @@ bool RobotController::Planner() {
     // ROS_INFO_STREAM("Planning started...");
     // ros::AsyncSpinner armSpinner;
     // armSpinner.start();
-    if (robot_move_group_.plan(robot_planner_) ==
-        moveit::planning_interface::MoveItErrorCode::SUCCESS) {
+    if (robot_move_group_.plan(robot_planner_) == moveit::planning_interface::MoveItErrorCode::SUCCESS) {
         plan_success_ = true;
         // ROS_INFO_STREAM("Planner succeeded!");
     } else {
@@ -210,7 +209,6 @@ void RobotController::GoToTarget(
 }
 
 
-
 void RobotController::SendRobotTo(std::map<std::string, double> desire_joint_states) {
     robot_move_group_.setJointValueTarget(desire_joint_states);
     // this->execute();
@@ -266,27 +264,25 @@ void RobotController::GripperToggle(const bool& state) {
 bool RobotController::DropPart(geometry_msgs::Pose part_pose) {
     // counter_++;
 
-    drop_flag_ = true;
-
+    drop_flag_ = true; // Dropping process in progress
     ros::spinOnce();
-    // ROS_INFO_STREAM("Placing phase activated...");
+    ROS_INFO_STREAM("[RobotController]:[DropPart]: Dropping Part...");
+    ROS_INFO_STREAM("[RobotController]:[DropPart]: Before dropping Gripper State : " << gripper_state_);
+//    ROS_INFO_STREAM("[RobotController]:[DropPart]: Before dropping Activated or not? " << int(gripper_service_.response.success));
 
     if (gripper_state_){//--while the part is still attached to the gripper
-        //--move the robot to the end of the rail
-         // ROS_INFO_STREAM("Moving towards AGV1...");
-         // robot_move_group_.setJointValueTarget(part_pose);
          auto temp_pose = part_pose;
          temp_pose.position.z = part_pose.position.z + 0.5;
-         // this->GoToTarget1(part_pose);
          this->GoToTarget({temp_pose, part_pose});
-
-         // this->Execute();
          ros::Duration(1.0).sleep();
          // ROS_INFO_STREAM("Actuating the gripper...");
          this->GripperToggle(false);
     }
 
-    drop_flag_ = false;
+    drop_flag_ = false; // Dropping process completed! Dropping successful
+
+    ROS_INFO_STREAM("[RobotController]:[DropPart]: After dropping Gripper State : " << gripper_state_);
+//    ROS_INFO_STREAM("[RobotController]:[DropPart]: After dropping Activated or not? " << int(gripper_service_.response.success));
     return gripper_state_;
 }
 

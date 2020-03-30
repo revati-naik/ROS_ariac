@@ -67,16 +67,17 @@ AriacSensorManager::AriacSensorManager() :
 AriacSensorManager::~AriacSensorManager() {}
 
 void AriacSensorManager::order_callback(const osrf_gear::Order::ConstPtr & order_msg) {
-    ROS_INFO_STREAM("Received order:\n" << *order_msg);
+    ROS_INFO_STREAM("[ASM]:[order_callback]:Received order:\n" << *order_msg);
     received_orders_.push_back(*order_msg);
     setDesiredParts();
     order_receiving_flag = true;
+    ROS_INFO("[ASM]:[order_callback]:Subscribing to LC gear Bin topic");
     lc_gear_sub = sensor_nh_.subscribe("/ariac/lc_gear", 10, 
         & AriacSensorManager::lc_gear_callback, this);
 }
 
 void AriacSensorManager::setDesiredParts(){
-    ROS_INFO_STREAM(">>>>>>>>> Setting desired parts");
+    ROS_INFO_STREAM("[ASM]:[setDesiredParts]:Setting desired parts");
     auto current_order = received_orders_[order_number];
     auto order_id = current_order.order_id;
     auto shipments = current_order.shipments;
@@ -87,11 +88,11 @@ void AriacSensorManager::setDesiredParts(){
         ROS_INFO_STREAM("Shipment Type: " << shipment_type);
         for (const auto &product: products){
             desired_parts_info.insert({product.type, product.pose});
-           ++(task[product.type]);
+           ++(task[product.type]); // Adding product name in task variable
         }
     }
 
-    ROS_INFO_STREAM(">>>>>>>> The current desired_parts are:");
+    ROS_INFO_STREAM("[ASM]:[setDesiredParts]:The current desired_parts are:");
     for (const auto & part : desired_parts_info){
         std::cout << part.first << std::endl;
         std::cout << "Pose:\n";
@@ -103,19 +104,18 @@ void AriacSensorManager::setDesiredParts(){
 
 void AriacSensorManager::lc_gear_callback(const osrf_gear::LogicalCameraImage::ConstPtr& image_msg){
     if (image_msg->models.size() == 0){
-        ROS_WARN_THROTTLE(5, "---lc_gear does not detect things---");
+        ROS_WARN_THROTTLE(5, "[ASM]:[lc_gear_callback]: lc_gear does not detect things");
         return;
     }
 
     ros::AsyncSpinner spinner(0);
     spinner.start();
 
-    ROS_INFO_STREAM_THROTTLE(5, "lc_gear captures '" << image_msg->models.size() << "' gears.");
+    ROS_INFO_STREAM_THROTTLE(5, "[ASM]:[lc_gear_callback]: '" << image_msg->models.size() << "' gears.");
     if (order_receiving_flag){
         lc_gear_sub.shutdown();
-        ROS_INFO_STREAM("lc_gear_callback should be shutdown");
+        ROS_INFO_STREAM("[ASM]:[lc_gear_callback]: lc_gear_callback shutdown until next order");
         gear_check(image_msg);
-        // can resubscribe to the camera if new orders are coming
     }
     // ros::spinOnce();
 }
@@ -128,12 +128,12 @@ void AriacSensorManager::gear_check(const osrf_gear::LogicalCameraImage::ConstPt
     tf2_ros::Buffer tfBuffer;
     tf2_ros::TransformListener tfListener(tfBuffer);
 
-    size_t desired_gear_num = task["gear_part"]; // conut numbers of gear needed
-    size_t gear_counter = image_msg->models.size(); // for labling number of gear part
+    size_t desired_gear_num = task["gear_part"]; // count number of gears needed
+    size_t gear_counter = image_msg->models.size(); // for labeling number of gear part
     for (auto & msg : image_msg->models){
         geometry_msgs::TransformStamped transformStamped;
         string camera_frame = "lc_gear_" + msg.type + "_" + to_string(gear_counter) + "_frame";
-        ROS_INFO_STREAM("The frame is named: " << camera_frame);
+        ROS_INFO_STREAM("[ASM]:[gear_check]:The frame is named: " << camera_frame);
         try{
             transformStamped = tfBuffer.lookupTransform("world", camera_frame, ros::Time(0), timeout);  
             geometry_msgs::Pose part_pose; 
@@ -154,7 +154,7 @@ void AriacSensorManager::gear_check(const osrf_gear::LogicalCameraImage::ConstPt
                         & AriacSensorManager::qc_2_callback, this);
                     if (qc_2_redFlag) { 
                         // if the one below the camera is a faulty one
-                        ROS_INFO_STREAM("QC 2 detected bad shit, ready to dispose....");
+                        ROS_INFO_STREAM("[ASM]:[gear_check]: QC 2 detected bad shit, ready to dispose....");
                         arm2.SendRobotTo("shoulder_pan_joint", 3.9);
                         arm2.GripperToggle(false);
                         arm2.SendRobotTo(back_transition_pose);
@@ -165,11 +165,13 @@ void AriacSensorManager::gear_check(const osrf_gear::LogicalCameraImage::ConstPt
                         arm2.SendRobotTo(back_transition_pose); 
                         arm2.RobotGoHome();
                         bool attach = arm2.DropPart(part_pose);
+                        // If part is dropped now, push it in gear_bin_vector
                         if (!attach)
-                            // gear_bin_map.insert({camera_frame, part_pose});
-                            gear_bin_vector.push_back(part_pose);
+                            gear_bin_vector.push_back(part_pose); // Storing the pose of the good gears inside gear_bin_vector
+                        else
+                            ROS_INFO_STREAM("[ASM][gear_check]: DropPart() states it was unsuccessful in dropping");
                     }
-                    qc_2_sub.shutdown(); // unsbuscirbe to qc_2
+                    qc_2_sub.shutdown(); // unsubscirbe to qc_2
                 }
                 --(task["gear_part"]);
             }
@@ -179,10 +181,10 @@ void AriacSensorManager::gear_check(const osrf_gear::LogicalCameraImage::ConstPt
             ROS_WARN("%s\n",ex.what());
         }
     }
-    // delete element from desired_parts
-    // ROS_INFO_STREAM("Out of for loop");
+
     arm2.SendRobotTo(back_transition_pose);
     ros::Duration(1).sleep();
+    ROS_INFO("[ASM]:[gear_check]: Called grab_gear()");
     grab_gear();
 }
 
@@ -192,7 +194,7 @@ void AriacSensorManager::qc_2_callback(const osrf_gear::LogicalCameraImage::Cons
         qc_2_redFlag = false;
     }
     else{
-        ROS_WARN_STREAM("Bad thing detected");
+        ROS_WARN_STREAM("[ASM]:[qc_2_callback]: Bad thing detected");
         qc_2_redFlag = true;
     }
 }
@@ -257,29 +259,31 @@ void AriacSensorManager::bb_2_callback(const osrf_gear::Proximity::ConstPtr & ms
     // ROS_INFO_STREAM(">>> Inside bb_2_callback");
     if (msg->object_detected) {
         auto incoming_part = incoming_partQ.front(); incoming_partQ.pop();
-        ROS_INFO_STREAM("Break beam triggered. The part is '" << incoming_part.first << "'");
+        ROS_INFO_STREAM("[ASM]:[bb_2_callback]: Break beam triggered. The part is '" << incoming_part.first << "'");
         if (!arm1_busy) {
             // if (desired_parts.find(incoming_part.first) != desired_parts.end() 
             //     && incoming_part.first == "piston_rod_part")
             if ((task[incoming_part.first] != 0) && 
                 (incoming_part.first == "piston_rod_part"))
             {
-                ROS_INFO_STREAM("Pick this part!");
+                ROS_INFO_STREAM("[ASM]:[bb_2_callback]: Pick this part!");
                 arm1_busy = true;
                 pick_part_from_belt(incoming_part);
             } 
             else {
-                ROS_INFO_STREAM("... Doesn't need this part ...");
+                ROS_INFO_STREAM("[ASM]:[bb_2_callback]: Doesn't need this part ...");
             }
         }
         else {
-            ROS_INFO_STREAM(">>> Arm1 is busy...");
+            ROS_INFO_STREAM("[ASM]:[bb_2_callback]: Arm1 is busy...");
         }
     }
 }
 
-void AriacSensorManager::pick_part_from_belt(pair<string, string> incoming_part){   
-    ROS_INFO_STREAM(">>> Inside pick_part_from_belt");
+void AriacSensorManager::pick_part_from_belt(pair<string, string> incoming_part){
+//    ros::AsyncSpinner spinner(0);
+//    spinner.start();
+    ROS_INFO_STREAM("[ASM]:[pick_part_from_belt]: Inside pick_part_from_belt");
     auto part_frame = belt_part_map[incoming_part.second];
 
     bool if_pick = arm1.PickPart(part_frame);
@@ -289,7 +293,7 @@ void AriacSensorManager::pick_part_from_belt(pair<string, string> incoming_part)
         arm1.SendRobotTo(arm1_check_qc_pose);
         qc_1_sub.shutdown();
         if (qc_1_redFlag) { // if the one below the camera is a faulty one
-            ROS_INFO_STREAM("QC 1 detected bad shit, ready to dispose....");
+            ROS_INFO_STREAM("[ASM]:[pick_part_from_belt]: QC 1 detected bad shit, ready to dispose....");
             arm1_check_qc_pose["shoulder_pan_joint"] = 2.32;
             arm1.SendRobotTo(arm1_check_qc_pose);
             arm1.GripperToggle(false);
@@ -310,29 +314,29 @@ void AriacSensorManager::qc_1_callback(const osrf_gear::LogicalCameraImage::Cons
     if (image_msg->models.size() == 0)
         qc_1_redFlag = false;
     else{
-        ROS_WARN_STREAM("Bad thing detected");
+        ROS_WARN_STREAM("[ASM]:[qc_1_callback]: Bad thing detected");
         qc_1_redFlag = true;
     }
 }
 
 void AriacSensorManager::lc_bin_1_callback(const osrf_gear::LogicalCameraImage::ConstPtr& image_msg){
     if (image_msg->models.size() == 0){
-        ROS_WARN_THROTTLE(5, "---lc_gear does not detect things---");
+        ROS_WARN_THROTTLE(5, "[ASM]:[lc_bin_1_callback]: Bin 1 sees no part");
         return;
     }
 
     ros::AsyncSpinner spinner(0);
     spinner.start();
-    ROS_INFO_STREAM_THROTTLE(5, "lc_bin captures '" << image_msg->models.size() << "' item(s).");
+    ROS_INFO_STREAM_THROTTLE(5, "[ASM]:[lc_bin_1_callback]: lc_bin captures '" << image_msg->models.size() << "' item(s).");
     if (!arm1_busy){
-        ROS_INFO_STREAM(">>>> Before function grab_bin1");
+        ROS_INFO_STREAM("[ASM]:[lc_bin_1_callback]: Calling function grab_bin1");
         grab_bin1(image_msg);
         // lc_bin_1_sub.shutdown();
     }
 }
 
 void AriacSensorManager::grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr& image_msg){
-    ROS_INFO_STREAM(">>>> Inside function grab_bin1");
+    ROS_INFO_STREAM("[ASM]:[grab_bin1]: Inside function grab_bin1");
 
     ros::AsyncSpinner spinner(0);
     spinner.start();
@@ -341,13 +345,14 @@ void AriacSensorManager::grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr
     tf2_ros::Buffer tfBuffer;
     tf2_ros::TransformListener tfListener(tfBuffer);
 
-    size_t part_counter = 0; // for labling number of gear part
+    size_t part_counter = 0; // for labeling number of gear part // --- Issue
+
     for (auto & msg : image_msg->models){
         geometry_msgs::TransformStamped transformStamped;
-        string camera_frame = "lc_bin_1_" + msg.type + "_" + to_string(part_counter) + "_frame";
-        ROS_INFO_STREAM("The frame is named: " << camera_frame);
+        string bin_part_camera_frame = "lc_bin_1_" + msg.type + "_" + to_string(part_counter) + "_frame";
+        ROS_INFO_STREAM("[ASM]:[grab_bin1]: The frame is named: " << bin_part_camera_frame);
         try{
-            transformStamped = tfBuffer.lookupTransform("world", camera_frame, ros::Time(0), timeout);  
+            transformStamped = tfBuffer.lookupTransform("world", bin_part_camera_frame, ros::Time(0), timeout);
             geometry_msgs::Pose part_pose; 
             part_pose.position.x = transformStamped.transform.translation.x;
             part_pose.position.y = transformStamped.transform.translation.y;
@@ -357,14 +362,14 @@ void AriacSensorManager::grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr
             part_pose.orientation.z = transformStamped.transform.rotation.z;
             part_pose.orientation.w = transformStamped.transform.rotation.w;
 
-            if (!arm1_busy && (desired_parts_info.find(msg.type) != desired_parts_info.end())){
+            if (!arm1_busy && (desired_parts_info.find(msg.type) != desired_parts_info.end())) {
                 arm1_busy = true;
                 arm1.SendRobotTo(arm1_bin_pose);
                 bool if_pick = arm1.PickPart(part_pose);
                 if (if_pick) {
-                    ROS_INFO_STREAM(">>>> Try FK");
+                    ROS_INFO_STREAM("[ASM]:[grab_bin1]: Try FK");
                     arm1.SendRobotTo(arm1_bin_pose);
-                    try{
+                    try {
                         auto itr = desired_parts_info.find(msg.type);
                         auto drop_pose_ = itr->second;
                         geometry_msgs::PoseStamped StampedPose_in, StampedPose_out;
@@ -373,23 +378,24 @@ void AriacSensorManager::grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr
                         StampedPose_out = tfBuffer.transform(StampedPose_in, "world");
                         auto drop_pose = StampedPose_out.pose;
                         drop_pose.position.z += 0.05;
-                        ROS_INFO_STREAM("Drop pose from tf2 transform:\n" << drop_pose);
+                        ROS_INFO_STREAM("[ASM]:[grab_bin1]: Drop pose from tf2 transform:\n" << drop_pose);
 
                         bool attach = arm1.DropPart(drop_pose);
                         arm1.RobotGoHome();
                         desired_parts_info.erase(itr);
                     }
                     catch (tf2::TransformException &ex) {
-                        ROS_INFO_STREAM("grab_bin1 error");
-                        ROS_WARN("%s\n",ex.what());
+                        ROS_INFO_STREAM("[ASM]:[grab_bin1]: grab_bin1 error");
+                        ROS_WARN("%s\n", ex.what());
                     }
                 }
                 arm1_busy = false;
-            }
             ++part_counter;
+            }
         }
         catch (tf2::TransformException &ex) {
             ROS_WARN("%s\n",ex.what());
+            ROS_INFO_STREAM("[ASM]:[grab_bin_1]: Frame Name Lookup Error, Frame name received:" << bin_part_camera_frame);
         }
     }
 }
@@ -399,23 +405,23 @@ void AriacSensorManager::lc_agv_1_callback(const osrf_gear::LogicalCameraImage::
     spinner.start();
 
     if (image_msg->models.size() == 0){
-        ROS_INFO_STREAM_THROTTLE(5, "---lc_agv_1 does not detect things---");
+        ROS_INFO_STREAM_THROTTLE(5, "[ASM]:[lc_agv_1_callback]: lc_agv_1 does not detect things");
         return;
     }
 
-    ROS_INFO_STREAM_THROTTLE(5, ">>> Inside lc_agv_1_callback");
+    ROS_INFO_STREAM_THROTTLE(5, "[ASM]:[lc_agv_1_callback]: Inside lc_agv_1_callback");
 
-    ROS_INFO_STREAM_THROTTLE(5, "lc_agv_1 captures '" << image_msg->models.size() << "' item(s).");
+    ROS_INFO_STREAM_THROTTLE(5, "[ASM]:[lc_agv_1_callback]: lc_agv_1 captures '" << image_msg->models.size() << "' item(s).");
     
     ros::Duration timeout(0.2);
     tf2_ros::Buffer tfBuffer;
     tf2_ros::TransformListener tfListener(tfBuffer);
 
-    size_t part_counter = 0; // for labling number of gear part
+    size_t part_counter = 0;
     for (auto & msg : image_msg->models){
         geometry_msgs::TransformStamped transformStamped;
         string camera_frame = "lc_agv_1_" + msg.type + "_" + to_string(part_counter) + "_frame";
-        ROS_INFO_STREAM("The frame is named: " << camera_frame);
+        ROS_INFO_STREAM("[ASM]:[lc_agv_1_callback]: The frame is named: " << camera_frame);
         try{
             transformStamped = tfBuffer.lookupTransform("world", camera_frame, ros::Time(0), timeout);
             geometry_msgs::Pose part_pose; 
@@ -433,7 +439,7 @@ void AriacSensorManager::lc_agv_1_callback(const osrf_gear::LogicalCameraImage::
             StampedPose_out = tfBuffer.transform(StampedPose_in, "kit_tray_1");
             auto agv_pose = StampedPose_out.pose;
 
-            ROS_INFO_STREAM("The part pose on the tray in kit_tray_1 frame is:\n" << part_pose);
+            ROS_INFO_STREAM("[ASM]:[lc_agv_1_callback]: Part pose on the tray in kit_tray_1 frame is:\n" << part_pose);
         }
         catch (tf2::TransformException &ex) {
             ROS_WARN("%s\n",ex.what());
@@ -442,40 +448,29 @@ void AriacSensorManager::lc_agv_1_callback(const osrf_gear::LogicalCameraImage::
 }
 
 void AriacSensorManager::grab_gear(){
-    ROS_INFO_STREAM(">>>> Inside function grab_gear");
+    ROS_INFO_STREAM("[ASM]:[grab_gear]: Inside function grab_gear");
 
-    // ros::AsyncSpinner spinner(0);
-    // spinner.start();
+    ros::AsyncSpinner spinner(0);
+    spinner.start();
     
     ros::Duration timeout(0.2);
     tf2_ros::Buffer tfBuffer;
     tf2_ros::TransformListener tfListener(tfBuffer);
 
-    size_t part_counter = 0; // for labling number of gear part
+    size_t part_counter = 0; // for labeling number of gear part
+    ROS_INFO_STREAM("[ASM]:[grab_gear]: gear_bin_vector contains: " << gear_bin_vector.size() << " Gears");
     for (auto & msg : gear_bin_vector){
-        ROS_INFO_STREAM("inside the for loop");
-        ROS_INFO_STREAM("msg inside gear_bin_vector is:" << msg);
-        // geometry_msgs::TransformStamped transformStamped;
-        // string camera_frame = "lc_bin_1_" + msg.type + "_" + to_string(part_counter) + "_frame";
-        // auto camera_frame = gear_bin_map.first;
-        // ROS_INFO_STREAM("The frame is named: " << camera_frame);
-        try{
-            // transformStamped = tfBuffer.lookupTransform("world", camera_frame, ros::Time(0), timeout);  
-            geometry_msgs::Pose part_pose = msg;
-            // part_pose.position.x = transformStamped.transform.translation.x;
-            // part_pose.position.y = transformStamped.transform.translation.y;
-            // part_pose.position.z = transformStamped.transform.translation.z;
-            // part_pose.orientation.x = transformStamped.transform.rotation.x;
-            // part_pose.orientation.y = transformStamped.transform.rotation.y;
-            // part_pose.orientation.z = transformStamped.transform.rotation.z;
-            // part_pose.orientation.w = transformStamped.transform.rotation.w;
+//        ROS_INFO_STREAM("[ASM]:[grab_gear]: inside the for loop");
+        ROS_INFO_STREAM("[ASM]:[grab_gear]: Pose to pick part from:" << msg);
 
+        try{
+            geometry_msgs::Pose part_pose = msg;
             if (!arm1_busy && (desired_parts_info.find("gear_part") != desired_parts_info.end())){
                 arm1_busy = true;
                 arm1.SendRobotTo(arm1_bin_pose);
                 bool if_pick = arm1.PickPart(part_pose);
                 if (if_pick) {
-                    ROS_INFO_STREAM(">>>> Try FK");
+                    ROS_INFO_STREAM("[ASM]:[grab_gear]: Try FK");
                     arm1.SendRobotTo(arm1_bin_pose);
                     try{
                         auto itr = desired_parts_info.find("gear_part");
@@ -486,14 +481,14 @@ void AriacSensorManager::grab_gear(){
                         StampedPose_out = tfBuffer.transform(StampedPose_in, "world");
                         auto drop_pose = StampedPose_out.pose;
                         drop_pose.position.z += 0.05;
-                        ROS_INFO_STREAM("Drop pose from tf2 transform:\n" << drop_pose);
+                        ROS_INFO_STREAM("[ASM]:[grab_gear]: Drop pose from tf2 transform:\n" << drop_pose);
 
                         bool attach = arm1.DropPart(drop_pose);
                         arm1.RobotGoHome();
                         desired_parts_info.erase(itr);
                     }
                     catch (tf2::TransformException &ex) {
-                        ROS_INFO_STREAM("grab_bin1 error");
+                        ROS_INFO_STREAM("[ASM]:[grab_gear]: grab_bin1 error");
                         ROS_WARN("%s\n",ex.what());
                     }
                 }
