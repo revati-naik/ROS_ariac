@@ -1,3 +1,7 @@
-to contro; using rqt gui
+to control the arms using rqt gui
 
 `rqt robot_description:=/ariac/arm1/robot_description`
+
+to visualize the tf frames
+
+`rviz rviz`
