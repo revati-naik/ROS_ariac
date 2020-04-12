@@ -1,0 +1,3 @@
+to contro; using rqt gui
+
+`rqt robot_description:=/ariac/arm1/robot_description`
