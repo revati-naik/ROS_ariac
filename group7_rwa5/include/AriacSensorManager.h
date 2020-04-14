@@ -25,7 +25,7 @@
 #include <osrf_gear/Proximity.h>
 #include <osrf_gear/Order.h>
 #include "RobotController.h"
-
+#include <algorithm>
 
 class AriacSensorManager {
 private:
@@ -52,6 +52,7 @@ private:
 
     // Order/Product/Pose containers
     std::vector<osrf_gear::Order> received_orders_;
+    std::vector<osrf_gear::Order> updated_received_orders_;
     unsigned int order_number;
     std::unordered_map<std::string, geometry_msgs::Pose> belt_part_map; // map for checked part from the belt
     std::unordered_map<std::string, geometry_msgs::Pose> gear_bin_map; // map for checked part in the bin
@@ -65,6 +66,7 @@ private:
     std::vector<std::pair<std::string, geometry_msgs::Pose>> gear_bin_vector;
     bool order_receiving_flag;
     std::set<std::string> parts_to_pickup_belt;
+
 
 
     // Robot related
@@ -90,14 +92,26 @@ private:
     osrf_gear::LogicalCameraImage current_parts_6_;
 
     bool  cam_1_, cam_2_,cam_3_, cam_4_, cam_5_,cam_6_;
+    bool Flag_updateKit;
+    int order_counter;
     int camera1_frame_counter_, camera2_frame_counter_, camera3_frame_counter_;
     int camera4_frame_counter_, camera5_frame_counter_, camera6_frame_counter_;
     std::map<std::string, std::vector<std::string>> product_frame_list_;
+
+    int NumPartsToRemove, NumPartsToModify, NumPartsToAdd;
 
     tf::TransformListener camera_tf_listener_;
     tf::StampedTransform camera_tf_transform_;
 
     std::pair<std::string,geometry_msgs::Pose> product_type_pose_;
+//    std::vector<geometry_msgs::Pose> empty_vector;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> order_update_product_type_pose_;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> order_update_copy;
+
+    std::map<std::string, std::vector<geometry_msgs::Pose>> built_kit_product_type_pose_;
+
+    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_to_remove_product_type_pose_;
+
 
 
 
@@ -128,6 +142,23 @@ public:
     bool PickAndPlace(const std::pair<std::string,geometry_msgs::Pose> product_type_pose, int agv_id);
     std::string GetProductFrame(std::string product_type);
     void ExecuteOrder();
+    void UpdateKit();
+    void PickAndThrow(geometry_msgs::Pose part_pose, std::string product_type, RobotController& arm);
+    void CorrectPose(geometry_msgs::Pose current_pose, geometry_msgs::Pose updated_pose,
+                                         std::string product_type, int agv_id);
+    bool QualityCheck(int agv_id);
+    void buildUpdatedKitMap();
+    void WhatToRemove();
+    void WhatToModify();
+    void WhatToAdd();
+
+    void removeParts();
+    void modifyPose();
+    void addParts();
+
+    void ReExecute();
+    void SubmitAGV(int num);
+
     geometry_msgs::Pose kitToWorld(geometry_msgs::Pose part_pose, int agv_id);
 
     void grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr&);

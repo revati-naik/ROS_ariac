@@ -1,4 +1,9 @@
 #include "AriacSensorManager.h"
+#include <osrf_gear/AGVControl.h>
+#include <ros/ros.h>
+#include <std_srvs/Trigger.h>
+
+
 using namespace std;
 
 AriacSensorManager::AriacSensorManager() :
@@ -27,6 +32,12 @@ AriacSensorManager::AriacSensorManager() :
     lc_bin_6_sub = sensor_nh_.subscribe("/ariac/lc_bin_6", 10,
                                         &AriacSensorManager::lc_bin_6_callback, this);
 
+    qc_1_sub = sensor_nh_.subscribe("/ariac/quality_control_sensor_1", 10,
+                                    & AriacSensorManager::qc_1_callback, this);
+
+    qc_2_sub = sensor_nh_.subscribe("/ariac/quality_control_sensor_2", 10,
+                                    & AriacSensorManager::qc_2_callback, this);
+
     init_ = false;
     cam_1_ = false;
     cam_2_ = false;
@@ -34,6 +45,11 @@ AriacSensorManager::AriacSensorManager() :
     cam_4_ = false;
     cam_5_ = false;
     cam_6_ = false;
+    Flag_updateKit = false;
+
+    NumPartsToRemove = 0;
+    NumPartsToModify = 0;
+    NumPartsToAdd = 0;
 
     camera1_frame_counter_ = 1;
     camera2_frame_counter_ = 1;
@@ -42,6 +58,7 @@ AriacSensorManager::AriacSensorManager() :
     camera5_frame_counter_ = 1;
     camera6_frame_counter_ = 1;
 
+    order_counter = 0;
 
     order_number = 0;
     int counter = 0;
@@ -52,19 +69,20 @@ AriacSensorManager::AriacSensorManager() :
     arm1_busy = false;
     everything_ready = false;
 
-    arm2_check_qc_pose["linear_arm_actuator_joint"] = -1.1;
+    arm2_check_qc_pose["linear_arm_actuator_joint"] = -0.87;
     arm2_check_qc_pose["shoulder_pan_joint"] = 4.6;
     arm2_check_qc_pose["elbow_joint"] = 0;
     arm2_check_qc_pose["shoulder_lift_joint"] = 0;
     arm2_check_qc_pose["wrist_1_joint"] = -1.57;
     arm2_check_qc_pose["wrist_2_joint"] = -3.14/2;
 
-    arm2_transition_pose["linear_arm_actuator_joint"] = -0.56;
+    arm2_transition_pose["linear_arm_actuator_joint"] = 0;
     arm2_transition_pose["shoulder_pan_joint"] = 3.14;
-    arm2_transition_pose["shoulder_lift_joint"] = -3.14/2;
-    arm2_transition_pose["elbow_joint"] = 3.14/2;
-    arm2_transition_pose["wrist_1_joint"] = -1.5;
-    arm2_transition_pose["wrist_2_joint"] = -3.14/2;
+    arm2_transition_pose["shoulder_lift_joint"] = -1.2;
+    arm2_transition_pose["elbow_joint"] = 2.01;
+    arm2_transition_pose["wrist_1_joint"] = -2.51;
+    arm2_transition_pose["wrist_2_joint"] = -1.51;
+    arm2_transition_pose["wrist_3_joint"] = 0;
 
     arm1_bin_pose["linear_arm_actuator_joint"] = 0.25;
     arm1_bin_pose["shoulder_pan_joint"] = 2.13;
@@ -92,44 +110,56 @@ AriacSensorManager::AriacSensorManager() :
 AriacSensorManager::~AriacSensorManager() {}
 
 void AriacSensorManager::order_callback(const osrf_gear::Order::ConstPtr & order_msg) {
-    ROS_INFO_STREAM("[order_callback]:Received order:\n" << *order_msg);
+    ros::AsyncSpinner spinner(0);
+    spinner.start();
+
+    ROS_INFO_STREAM("[AriacSensorManager][order_callback]:Received order:\n" << *order_msg);
     received_orders_.push_back(*order_msg);
-    setDesiredParts();
+    // setDesiredParts();
     order_receiving_flag = true;
+    order_counter += 1;
 
-//    lc_bin_1_sub = sensor_nh_.subscribe("/ariac/lc_bin_1", 10,
-//                                        & AriacSensorManager::lc_bin_1_callback, this);
-//
-//    lc_bin_2_sub = sensor_nh_.subscribe("/ariac/lc_bin_2", 10,
-//                                        &AriacSensorManager::lc_bin_2_callback, this);
-//    lc_bin_3_sub = sensor_nh_.subscribe("/ariac/lc_bin_3", 10,
-//                                        &AriacSensorManager::lc_bin_3_callback, this);
-//
-//    lc_bin_4_sub = sensor_nh_.subscribe("/ariac/lc_bin_4", 10,
-//                                        &AriacSensorManager::lc_bin_4_callback, this);
-//
-//    lc_bin_5_sub = sensor_nh_.subscribe("/ariac/lc_bin_5", 10,
-//                                        &AriacSensorManager::lc_bin_5_callback, this);
-//
-//    lc_bin_6_sub = sensor_nh_.subscribe("/ariac/lc_bin_6", 10,
-//                                        &AriacSensorManager::lc_bin_6_callback, this);
+    if (order_counter >1) {
+        Flag_updateKit = true;
+        ROS_INFO_STREAM("[AriacSensorManager][order_callback]:Flag Update Set to true:\n" << Flag_updateKit);
 
-//    lc_gear_sub = sensor_nh_.subscribe("/ariac/lc_gear", 10,
-//                                       & AriacSensorManager::lc_gear_callback, this);
-
-
+    }else{
+        ExecuteOrder();
+    }
 }
 
-//void AriacSensorManager::lc_bin_1_callback(const osrf_gear::LogicalCameraImage::ConstPtr& image_msg){
-//    if (image_msg->models.size() == 0)
-//        return;
-//
-//    ros::AsyncSpinner spinner(4);
-//    spinner.start();
-//    ROS_INFO_STREAM_THROTTLE(5, "[lc_bin_1_callback]: lc_bin captures '" << image_msg->models.size() << "' item(s).");
-//    if (!arm1_busy)
-//        grab_bin1(image_msg);
-//}
+void AriacSensorManager::buildUpdatedKitMap(){
+    ROS_INFO_STREAM("[buildUpdatedKitMap]:updated desired parts");
+    auto updated_order = received_orders_.back();
+    auto order_id = updated_order.order_id;
+    auto shipments = updated_order.shipments;
+    for (const auto &shipment: shipments){
+        auto shipment_type = shipment.shipment_type;
+        auto products = shipment.products;
+        ROS_INFO_STREAM("Order ID: " << order_id);
+        ROS_INFO_STREAM("Shipment Type: " << shipment_type);
+        for (const auto &product: products){
+            order_update_product_type_pose_[product.type].emplace_back(product.pose);;
+        }
+    }
+
+    ROS_INFO_STREAM("[buildUpdatedKitMap]:The updated desired_parts are:");
+
+    auto vect = order_update_product_type_pose_["disk_part"];
+    for (auto part : vect){
+        std::cout  << " disk_part Part Pose is: " << part << std::endl;
+    }
+
+    vect = order_update_product_type_pose_["piston_rod_part"];
+    for (auto part : vect){
+        std::cout  << " piston_rod_part Part Pose is: " << part << std::endl;
+    }
+
+    vect = order_update_product_type_pose_["gear_part"];
+    for (auto part : vect){
+        std::cout  << " gear_part Part Pose is: " << part << std::endl;
+    }
+}
 
 void AriacSensorManager::lc_bin_1_callback(const osrf_gear::LogicalCameraImage::ConstPtr & image_msg){
 //    ros::AsyncSpinner spinner(0);
@@ -221,7 +251,6 @@ void AriacSensorManager::lc_bin_6_callback(const osrf_gear::LogicalCameraImage::
     current_parts_6_ = *image_msg;
     this->BuildProductFrames(6);
 }
-
 
 void AriacSensorManager::BuildProductFrames(int camera_id){
 
@@ -406,14 +435,12 @@ void AriacSensorManager::setDesiredParts(){
         ++order_number;
 
     everything_ready = true;
-//    PickAndPlace();
-
 
     if (order_number <=1){
         ExecuteOrder();
     }
-}
 
+}
 
 std::string AriacSensorManager::GetProductFrame(std::string product_type) {
     //--Grab the last one from the list then remove it
@@ -443,17 +470,106 @@ geometry_msgs::Pose AriacSensorManager::kitToWorld(geometry_msgs::Pose part_pose
     return part_pose_kit;
 }
 
+bool AriacSensorManager::QualityCheck(int agv_id){
 
+//    ROS_INFO_STREAM("[AriacSensorManager]:[QualityCheck]: In side QualityCheck : ");
+
+    bool quality_flag = false;
+    if (agv_id == 1){
+        quality_flag =  qc_1_redFlag;
+    }
+    else if (agv_id == 2){
+        quality_flag =  qc_2_redFlag;
+    }
+    return quality_flag;
+}
+
+void AriacSensorManager::PickAndThrow(geometry_msgs::Pose part_pose, std::string product_type, RobotController& arm){
+
+    ROS_INFO_STREAM("[AriacSensorManager]:[PickAndThrow]:Inside PickAndThrow ...");
+
+    if (product_type == "pulley_part")
+        part_pose.position.z += 0.08;
+    //--task the robot to pick up this part
+    bool failed_pick = arm.PickPart(part_pose);
+    ROS_WARN_STREAM("Picking up state " << failed_pick);
+    ros::Duration(0.5).sleep();
+
+    while (!failed_pick) {
+//        auto part_pose = GetPartPose("/world", product_frame);
+        failed_pick = arm.PickPart(part_pose);
+    }
+
+    geometry_msgs::Pose throw_away_pose;
+
+    throw_away_pose.position.x = 0.2-0.4;
+    throw_away_pose.position.y = -3.35 + 0.5;
+    throw_away_pose.position.z = 0.85 + 0.2;
+    throw_away_pose.orientation.x = 0;
+    throw_away_pose.orientation.y = 0;
+    throw_away_pose.orientation.z = 0;
+    throw_away_pose.orientation.w = 1;
+
+    arm.DropPart(throw_away_pose);
+    ros::Duration(1).sleep();
+
+//    ros::Duration(0.5).sleep();
+//
+//    arm.SendRobotTo("shoulder_lift_joint", -0.25);
+//    ros::Duration(0.5).sleep();
+//
+//    arm.SendRobotTo("shoulder_pan_joint", 4.13);
+//    ros::Duration(0.5).sleep();
+//
+//    arm.GripperToggle(false);
+//    ros::Duration(0.5).sleep();
+//
+//    arm.SendRobotTo("shoulder_pan_joint", 4.51);
+
+}
+
+
+void AriacSensorManager::CorrectPose(geometry_msgs::Pose current_pose, geometry_msgs::Pose updated_pose,
+        std::string product_type, int agv_id){
+
+    agv_id = 2;
+
+    ROS_INFO_STREAM("[AriacSensorManager]:[CorrectPose]:Inside PickAndPlace ...");
+
+    geometry_msgs::Pose part_pose = kitToWorld(current_pose, agv_id);
+
+    if (product_type == "pulley_part")
+        part_pose.position.z += 0.08;
+    //--task the robot to pick up this part
+    bool failed_pick = arm2.PickPart(part_pose);
+//        ROS_WARN_STREAM("Picking up state " << failed_pick);
+    ros::Duration(0.5).sleep();
+
+    while (!failed_pick) {
+//        auto part_pose = GetPartPose("/world", product_frame);
+        failed_pick = arm2.PickPart(part_pose);
+    }
+
+    ros::Duration(0.5).sleep();
+    arm2.SendRobotTo(arm2_transition_pose);
+    ros::Duration(1).sleep();
+
+    // Function to get the drop pose in world coordinates
+    geometry_msgs::Pose drop_pose = kitToWorld(updated_pose, agv_id);
+    ROS_INFO_STREAM("[AriacSensorManager]:[CorrectPose]: Drop Pose : " << drop_pose);
+
+    drop_pose.position.z += 0.05;
+    auto result = arm2.DropPart(drop_pose);
+    ros::Duration(1.5).sleep();
+    arm2.SendRobotTo(arm2_transition_pose);
+    ros::Duration(1.5).sleep();
+}
 
 bool AriacSensorManager::PickAndPlace(const std::pair<std::string,geometry_msgs::Pose> product_type_pose, int agv_id){
 
-    ROS_INFO_STREAM("[AriacSensorManager]:[PickAndPlace]:Inside PickAndPlace ...");
+//    ROS_INFO_STREAM("[AriacSensorManager]:[PickAndPlace]:Inside PickAndPlace ...");
 
     if(init_){
-
-//        std::string product_type = "pulley_part";
-//        auto vect = product_frame_list_[product_type];
-//        std::string product_frame = vect.back();
 
         std::string product_type = product_type_pose.first;
 
@@ -467,7 +583,7 @@ bool AriacSensorManager::PickAndPlace(const std::pair<std::string,geometry_msgs:
             part_pose.position.z += 0.08;
         //--task the robot to pick up this part
         bool failed_pick = arm2.PickPart(part_pose);
-        ROS_WARN_STREAM("Picking up state " << failed_pick);
+//        ROS_WARN_STREAM("Picking up state " << failed_pick);
         ros::Duration(0.5).sleep();
 
         while (!failed_pick) {
@@ -475,57 +591,45 @@ bool AriacSensorManager::PickAndPlace(const std::pair<std::string,geometry_msgs:
             failed_pick = arm2.PickPart(part_pose);
         }
 
-        // Here we will do Quality Check
-
-//        arm2.RobotGoHome();
-
         ros::Duration(0.5).sleep();
-
-        arm2_transition_pose["linear_arm_actuator_joint"] = -0.21;
-        arm2_transition_pose["shoulder_pan_joint"] = 3.14;
-        arm2_transition_pose["shoulder_lift_joint"] = -1;
-        arm2_transition_pose["elbow_joint"] = 2.01;
-        arm2_transition_pose["wrist_1_joint"] = -2.51;
-        arm2_transition_pose["wrist_2_joint"] = -1.51;
-        arm2_transition_pose["wrist_3_joint"] = 0;
-
-
         arm2.SendRobotTo(arm2_transition_pose);
-
         ros::Duration(1).sleep();
 
         agv_id = 2;
 
         // Function to get the drop pose in world coordinates
         geometry_msgs::Pose drop_pose = kitToWorld(product_type_pose.second, agv_id);
-
-
         ROS_INFO_STREAM("[AriacSensorManager]:[PickAndPlace]: Drop Pose : " << drop_pose);
 
-
-
         drop_pose.position.z += 0.05;
-//        geometry_msgs::Pose drop_pose = product_type_pose.second;
-//        drop_pose.position.x = -0.230428;
-//        drop_pose.position.y = 0.375809;
-//        drop_pose.position.z = 1.024050;
-//
-//        drop_pose.orientation.x = 0;
-//        drop_pose.orientation.y = 0;
-//        drop_pose.orientation.z = 0;
-//        drop_pose.orientation.w = 0;
-
         auto result = arm2.DropPart(drop_pose);
-
+        ros::Duration(1.5).sleep();
+        arm2.SendRobotTo(arm2_transition_pose);
         ros::Duration(1.5).sleep();
 
-        arm2.SendRobotTo(arm2_transition_pose);
+        // Here we can do the quality check, return type would be a bool, whether good or bad
+        bool quality = QualityCheck(agv_id);
 
+        ROS_INFO_STREAM("[AriacSensorManager]:[PickAndPlace]: Quality is : " << quality);
+
+        // if part is faluty:
+        if (quality){
+
+            ROS_INFO_STREAM("[AriacSensorManager]:[PickAndPlace]: In side Quality If : " << quality);
+
+//            drop_pose.position.z -= 0.02;
+            //------pick the part and throw it away using the drop_pose-------
+            PickAndThrow(drop_pose, product_type, arm2);
+
+            arm2.SendRobotTo(arm2_check_qc_pose);
+            ros::Duration(1.5).sleep();
+
+            //------ Do PickAndPlace again------------------------------------
+            PickAndPlace(product_type_pose, agv_id);
+        }
     }
-
 }
 
-//
 void AriacSensorManager::ExecuteOrder() {
     ROS_WARN(">>>>>> Executing order...");
     //scanned_objects_ = camera_.GetParts();
@@ -560,48 +664,379 @@ void AriacSensorManager::ExecuteOrder() {
                 product_type_pose_.second = product.pose;
                 ROS_INFO_STREAM("Product pose: " << product_type_pose_.second.position.x);
                 pick_n_place_success =  PickAndPlace(product_type_pose_, agv_id);
+
+                // We put the parts which are good into  a map here
+                built_kit_product_type_pose_[product.type].emplace_back(product.pose);
+
                 //--todo: What do we do if pick and place fails?
             }
-//            SubmitAGV(2);
-            ROS_INFO_STREAM("Submitting AGV 1");
+            if (Flag_updateKit){
+                buildUpdatedKitMap();
+                UpdateKit();
+            }
+            SubmitAGV(2);
+            ROS_INFO_STREAM("[AriacSensorManager][ExecuteOrder] : Submitting AGV 1");
             int finish=1;
-        }
 
+        }
     }
 }
-//
 
+void  AriacSensorManager::WhatToRemove(){
 
-//void AriacSensorManager::lc_gear_callback(const osrf_gear::LogicalCameraImage::ConstPtr& image_msg){
-//    if (image_msg->models.size() == 0){
-//        ROS_WARN_THROTTLE(5, "[lc_gear_callback]: lc_gear does not detect things");
-//        return;
-//    }
-//    else{
-//        parts_to_pickup_belt.erase("gear_part");
-//    }
-//
-//
-//    ros::AsyncSpinner spinner(4);
-//    spinner.start();
-//
-//    ROS_INFO_STREAM_THROTTLE(5, "[lc_gear_callback]: '" << image_msg->models.size() << "' gears.");
-//    if (order_receiving_flag){
-//        lc_gear_sub.shutdown();
-//        gear_check(image_msg);
-//    }
-//}
+    vector<std::string> keys;
 
+    // Looping through the maps
+    for(auto const& item: built_kit_product_type_pose_){
+
+        keys.push_back(item.first);
+        auto part_type = item.first;
+
+        std::cout << "[AriacSensorManager][WhatToRemove] : The part type is : " << part_type << "\n";
+
+        // condition to check if that type of part_type exists in both the maps
+        if (order_update_product_type_pose_.find(part_type) != order_update_product_type_pose_.end()){
+
+            auto update = order_update_product_type_pose_[part_type];
+            auto built = built_kit_product_type_pose_[part_type];
+
+            if (built.size() > update.size()){
+                int difference = built.size() - update.size();
+                NumPartsToRemove = NumPartsToRemove + difference;  // Lets say
+                std::cout << "[AriacSensorManager][WhatToRemove] : The difference is : " << difference << "\n";
+                int i=0;
+                bool same_flag = false;
+
+                // Select a pose from built
+                for (auto built_pose: built){
+                    same_flag = false;
+
+                    // search with every pose in update
+                    for(auto update_pose: update){
+
+                        // if the pose matches with one of the pose, dont remove
+                        if (built_pose == update_pose){
+                            same_flag = true;
+                        }
+                    }
+                    // find out what to remove
+                    // if the pose doesn't match with any pose in the update, we can safely remove
+                    if (!same_flag && i< difference){
+                        parts_to_remove_product_type_pose_[part_type].emplace_back(built_pose);
+
+                        // Erase built_pose that will be thrown away. Using the std::remove to find the part
+                        // from the vector to remove it for built_map
+                        built_kit_product_type_pose_[part_type].erase(std::remove(built_kit_product_type_pose_[part_type].begin(),
+                                built_kit_product_type_pose_[part_type].end(), built_pose),
+                                        built_kit_product_type_pose_[part_type].end());
+
+                        // increasing the counter here, because we only nee 'difference' number of parts to remove
+                        i++;
+                    }
+                }
+            }
+        }else{
+            // Enters here as the part type doesn't exist in the updated order
+            // We have to remove all the parts with that part type
+            std::cout << "[AriacSensorManager][WhatToRemove] : non existent parts type is : " << part_type << "\n";
+            auto built_non_existent = built_kit_product_type_pose_[part_type];
+            parts_to_remove_product_type_pose_[part_type] = built_non_existent;
+
+            // Erase built_non_existent pose from the built map that will be thrown away.
+            // Using the std::remove to find the part from the vector to remove it for built_map
+            built_kit_product_type_pose_.erase(part_type);
+            NumPartsToRemove += built_non_existent.size();
+            // not found
+        }
+    }
+}
+
+// Second, Check for number of parts to be changed positions
+void  AriacSensorManager::WhatToModify(){
+
+    order_update_copy = order_update_product_type_pose_;
+
+    // Looping through the maps
+    for (auto const& built_item: built_kit_product_type_pose_){
+
+        auto built_part_type = built_item.first;        //gear_part
+        std::cout << "[AriacSensorManager][WhatToModify] : The part type is : " << built_part_type << "\n";
+
+        for (auto built_pose : built_item.second){
+
+            for (auto const& order_item: order_update_copy){
+
+                auto order_part_type = order_item.first;
+
+                for (auto update_pose : order_item.second){
+
+                    if (built_pose == update_pose &&  built_part_type == order_part_type){
+
+                        std::cout << "[AriacSensorManager][WhatToModify] : Poses match for same type, Lucky!! : " << "\n";
+//                        std::cout << "[AriacSensorManager][WhatToModify] : order type!! : " << order_part_type << "\n";
+//                        std::cout << "[AriacSensorManager][WhatToModify] : Built type!! : " << built_part_type << "\n";
+//                        std::cout << "[AriacSensorManager][WhatToModify] : order pose!! : " << update_pose << "\n";
+//                        std::cout << "[AriacSensorManager][WhatToModify] : Built pose!! : " << built_pose << "\n";
+
+                        order_update_copy[order_part_type].erase(std::remove(order_update_copy[order_part_type].begin(),
+                                order_update_copy[order_part_type].end(), update_pose),
+                                        order_update_copy[order_part_type].end());
+
+                        built_kit_product_type_pose_[built_part_type].erase(std::remove(built_kit_product_type_pose_[built_part_type].begin(),
+                                built_kit_product_type_pose_[built_part_type].end(), built_pose),
+                                        built_kit_product_type_pose_[built_part_type].end());
+
+                    }else if(built_pose == update_pose &&  built_part_type != order_part_type){
+
+                        std::cout << "[AriacSensorManager][WhatToModify] : Poses match with different type, More Work!! : " << "\n";
+//                        std::cout << "[AriacSensorManager][WhatToModify] : order type!! : " << order_part_type << "\n";
+//                        std::cout << "[AriacSensorManager][WhatToModify] : Built type!! : " << built_part_type << "\n";
+//                        std::cout << "[AriacSensorManager][WhatToModify] : order pose!! : " << update_pose << "\n";
+//                        std::cout << "[AriacSensorManager][WhatToModify] : Built pose!! : " << built_pose << "\n";
+
+                        built_kit_product_type_pose_[built_part_type].erase(std::remove(built_kit_product_type_pose_[built_part_type].begin(),
+                                built_kit_product_type_pose_[built_part_type].end(), built_pose),
+                                        built_kit_product_type_pose_[built_part_type].end());
+                        parts_to_remove_product_type_pose_[built_part_type].emplace_back(built_pose);
+                        NumPartsToRemove += 1;
+
+                    }
+                }
+            }
+        }
+    }
+
+    for (auto const& built_item: built_kit_product_type_pose_) {
+        auto built_part_type = built_item.first;
+        NumPartsToModify = NumPartsToModify + built_item.second.size();
+    }
+}
+
+void  AriacSensorManager::WhatToAdd(){
+
+    std::cout << "[AriacSensorManager][WhatToAdd] : Inside the what to add : " << "\n";
+
+    for(auto const& pair : order_update_copy){
+
+        NumPartsToAdd += pair.second.size();
+    }
+}
+
+void AriacSensorManager::removeParts(){
+
+    int agv_id = 2;
+    for(auto const& pair : parts_to_remove_product_type_pose_){
+        std::cout << "[AriacSensorManager][removeParts] : part type to remove " << pair.first << std::endl;
+        auto part_type = pair.first;
+
+        for (auto part_pose : pair.second){
+            std::cout << "[AriacSensorManager][removeParts] : part pose to remove " << part_pose << std::endl;
+
+            geometry_msgs::Pose drop_pose = kitToWorld(part_pose, agv_id);
+
+            arm2.SendRobotTo(arm2_check_qc_pose);
+            ros::Duration(0.5).sleep();
+
+            PickAndThrow(drop_pose, part_type, arm2);
+            ros::Duration(0.5).sleep();
+
+            // Erase part_pose that is thrown away. Using the std::remove to find the part from the vector
+//             built_kit_product_type_pose_[part_type].erase(std::remove(built_kit_product_type_pose_[part_type].begin(),
+//                    built_kit_product_type_pose_[part_type].end(), part_pose),
+//                            built_kit_product_type_pose_[part_type].end());
+
+        }
+    }
+}
+
+void AriacSensorManager::modifyPose(){
+
+    // we need to get the current pose and where to place
+    // iterate through whatever is left on the Built_kit_map and search for that part_type in Order_update_map.
+    // built_kit_map gives the current pose and order_update_kit gives the updated pose.
+
+    int agv_id = 2;
+
+    for (auto const& built_item: built_kit_product_type_pose_){
+
+        auto built_part_type = built_item.first;
+        std::cout << "[AriacSensorManager][modifyPose] : The part type is : " << built_part_type << "\n";
+
+        for (auto built_pose : built_item.second) {
+
+            auto order_vect = order_update_copy[built_part_type];
+
+            auto update_pose = order_vect.back();
+            order_vect.pop_back();
+
+            // use pickandplace, here built_pose is current pose, update_pose is the updated pose where the
+            // parts needs to be placed
+            CorrectPose(built_pose, update_pose, built_part_type, agv_id);
+
+            order_update_copy[built_part_type].erase(std::remove(order_update_copy[built_part_type].begin(),
+                    order_update_copy[built_part_type].end(), update_pose),
+                            order_update_copy[built_part_type].end());
+
+            built_kit_product_type_pose_[built_part_type].erase(std::remove(built_kit_product_type_pose_[built_part_type].begin(),
+                    built_kit_product_type_pose_[built_part_type].end(), built_pose),
+                    built_kit_product_type_pose_[built_part_type].end());
+        }
+    }
+}
+
+void AriacSensorManager::addParts(){
+
+    int agv_id = 2;
+
+    std::cout << "[AriacSensorManager][AddParts] : Inside the AddParts : "  << "\n";
+
+    for(auto const& pair : order_update_copy){
+
+        auto part_type = pair.first;
+
+        for(auto part_pose : pair.second){
+
+            std::pair<std::string,geometry_msgs::Pose> type_pose_pair;
+            type_pose_pair.first = part_type;
+            type_pose_pair.second = part_pose;
+            PickAndPlace(type_pose_pair, agv_id);
+
+        }
+    }
+}
+
+void AriacSensorManager::ReExecute(){
+
+    int agv_id = 2;
+
+    std::cout << "[AriacSensorManager][ReExecute] : Inside the ReExecute : "  << "\n";
+
+    for(auto const& pair : order_update_product_type_pose_){
+
+        auto part_type = pair.first;
+
+        for(auto part_pose : pair.second){
+
+            std::pair<std::string,geometry_msgs::Pose> type_pose_pair;
+            type_pose_pair.first = part_type;
+            type_pose_pair.second = part_pose;
+            PickAndPlace(type_pose_pair, agv_id);
+
+        }
+    }
+}
+
+void AriacSensorManager::UpdateKit(){
+
+    // First built a map for new updated orders --> may be we should do this in the order callback.
+
+    // First, Check for number of Parts to be removed.
+    WhatToRemove();
+
+    for(auto const& pair : parts_to_remove_product_type_pose_){
+        std::cout << "[AriacSensorManager][UpdateKit] : Parts to remove:  part type is " << pair.first << std::endl;
+        auto parts = parts_to_remove_product_type_pose_[pair.first];
+
+        for (auto pa : parts){
+            std::cout << "[AriacSensorManager][UpdateKit] : Parts to remove: part pose is " << pa << std::endl;
+        }
+    }
+
+    std::cout << "[AriacSensorManager][UpdateKit] : Total Number of Parts to remove " << NumPartsToRemove << std::endl;
+
+    for(auto const& pair : built_kit_product_type_pose_){
+        std::cout << "[AriacSensorManager][UpdateKit] : After removal part type in built_kit is " << pair.first << std::endl;
+        auto parts = built_kit_product_type_pose_[pair.first];
+
+        for (auto pa : parts){
+            std::cout << "[AriacSensorManager][UpdateKit] : After removal part pose in built_kit is " << pa << std::endl;
+        }
+    }
+
+    // Second, Check for number of parts to be changed positions
+    WhatToModify();
+
+    std::cout << "[AriacSensorManager][UpdateKit] : Total Number of Parts to Modify " << NumPartsToModify << std::endl;
+    std::cout << "[AriacSensorManager][UpdateKit] : Total Number of Parts to remove after WhatToModify " << NumPartsToRemove << std::endl;
+
+    for(auto const& pair : built_kit_product_type_pose_){
+        std::cout << "[AriacSensorManager][UpdateKit] : After whatToModify part type in built_kit is " << pair.first << std::endl;
+        auto parts = built_kit_product_type_pose_[pair.first];
+
+        for (auto pa : parts){
+            std::cout << "[AriacSensorManager][UpdateKit] : After whatToModify part pose in built_kit is " << pa << std::endl;
+        }
+    }
+
+    // Third, Check for number of Parts to be Added.
+    WhatToAdd();
+
+    int TotalNumberOfChanges = NumPartsToRemove + NumPartsToModify + NumPartsToAdd;
+    int threshold = 1;
+
+    // Find the total number of changes to be done and compare with a threshold. Based on this comparison
+    // decide whether to proceed with the changes/ build a kit
+
+    // If number of changes is less than threshold:
+    if (TotalNumberOfChanges < threshold){
+
+        // Call the function to removePart()
+        removeParts();
+
+        // Call the function to modifyPosition()
+        modifyPose();
+
+        for(auto const& pair : order_update_copy){
+            std::cout << "[AriacSensorManager][UpdateKit] : After whatToModify part type in order_update is " << pair.first << std::endl;
+            auto parts = order_update_copy[pair.first];
+
+            for (auto pa : parts){
+                std::cout << "[AriacSensorManager][UpdateKit] : After whatToModify part type in order_update is " << pa << std::endl;
+            }
+        }
+
+        // Call the function to addParts()
+        addParts();
+    }else{
+
+        SubmitAGV(2);
+
+        ros::Duration(15.0).sleep();
+
+        ReExecute();
+
+    }
+
+    // Else if number of changes is greater that threshold:
+    // Call the function to ExecuteOrder() for order_0_update_0
+}
+
+void AriacSensorManager::SubmitAGV(int num) {
+    std::string s = std::to_string(num);
+    ros::ServiceClient start_client =
+            sensor_nh_.serviceClient<osrf_gear::AGVControl>("/ariac/agv"+s);
+    if (!start_client.exists()) {
+        ROS_INFO("Waiting for the client to be ready...");
+        start_client.waitForExistence();
+        ROS_INFO("Service started.");
+    }
+
+    osrf_gear::AGVControl srv;
+    // srv.request.kit_type = "order_0_kit_0";
+    start_client.call(srv);
+
+    if (!srv.response.success) {
+        ROS_ERROR_STREAM("Service failed!");
+    } else
+        ROS_INFO("Service succeeded.");
+}
 
 void AriacSensorManager::qc_2_callback(const osrf_gear::LogicalCameraImage::ConstPtr& image_msg){
-//    ros::AsyncSpinner spinner(4);
-//    spinner.start();
-
     if (image_msg->models.size() == 0){
         qc_2_redFlag = false;
     }
     else {
-        ROS_WARN_STREAM_ONCE("[qc_2_callback] detecte faulty part");
+        ROS_WARN_STREAM_ONCE("[qc_2_callback] detected faulty part");
         qc_2_redFlag = true;
     }
 }
@@ -613,392 +1048,4 @@ void AriacSensorManager::qc_1_callback(const osrf_gear::LogicalCameraImage::Cons
         ROS_WARN_STREAM("[qc_1_callback]: faulty part detected");
         qc_1_redFlag = true;
     }
-}
-
-void AriacSensorManager::gear_check(const osrf_gear::LogicalCameraImage::ConstPtr& image_msg){
-//    ros::AsyncSpinner spinner(4);
-//    spinner.start();
-
-    ros::Duration timeout(0.2);
-
-    size_t desired_gear_num = task["gear_part"]; // count number of gears needed
-    size_t gear_counter = image_msg->models.size(); // for labeling number of gear part
-    for (auto & msg : image_msg->models){
-        geometry_msgs::TransformStamped transformStamped;
-        string camera_frame = "lc_gear_" + msg.type + "_" + to_string(gear_counter) + "_frame";
-        try{
-            transformStamped = tfBuffer.lookupTransform("world", camera_frame, ros::Time(0), timeout);
-            geometry_msgs::Pose part_pose;
-            part_pose.position.x = transformStamped.transform.translation.x;
-            part_pose.position.y = transformStamped.transform.translation.y;
-            part_pose.position.z = transformStamped.transform.translation.z;
-            part_pose.orientation.x = transformStamped.transform.rotation.x;
-            part_pose.orientation.y = transformStamped.transform.rotation.y;
-            part_pose.orientation.z = transformStamped.transform.rotation.z;
-            part_pose.orientation.w = transformStamped.transform.rotation.w;
-
-            if (task["gear_part"] != 0){
-                bool if_pick = arm2.PickPart(part_pose);
-                if (if_pick) {
-                    /// ---------checking mechanism --------------------
-                    qc_2_sub = sensor_nh_.subscribe("/ariac/quality_control_sensor_2", 10,
-                                                    & AriacSensorManager::qc_2_callback, this);
-                    arm2.SendRobotTo(arm2_transition_pose);
-                    arm2.SendRobotTo(arm2_check_qc_pose);
-                    arm2.GripperToggle(false); // release gripper
-
-                    transformStamped = tfBuffer.lookupTransform("world", "arm2_ee_link", ros::Time(0), timeout);
-                    geometry_msgs::Pose ee2_pose;
-                    ee2_pose.position.x = transformStamped.transform.translation.x;
-                    ee2_pose.position.y = transformStamped.transform.translation.y;
-                    ee2_pose.position.z = transformStamped.transform.translation.z;
-                    ee2_pose.position.z -= 0.275;
-
-                    arm2.SendRobotTo("shoulder_pan_joint", 4.3);
-                    ros::Duration(0.5).sleep();
-                    qc_2_sub.shutdown();
-                    arm2.SendRobotTo("shoulder_pan_joint", 4.6);
-
-                    bool if_pick_tray = arm2.PickPart(ee2_pose);
-                    ROS_INFO_STREAM("qc_2_redFlag = " << qc_2_redFlag);
-                    while (!if_pick_tray) {
-                        ee2_pose.position.z -= 0.05;
-                        if_pick_tray = arm2.PickPart(ee2_pose);
-                    }
-                    /// ---------checking mechanism --------------------
-
-                    if (qc_2_redFlag) {
-                        // if the one below the camera is a faulty one
-                        ROS_WARN_STREAM("[gear_check]: QC 2 detected faulty part, ready to dispose....");
-                        arm2.SendRobotTo("shoulder_pan_joint", 3.9);
-                        arm2.GripperToggle(false);
-                        arm2.SendRobotTo(arm2_transition_pose);
-                        arm2.RobotGoHome();
-                    }
-                    else {
-                        // if the one below the camera is a good one
-                        arm2.SendRobotTo(arm2_transition_pose);
-                        arm2.RobotGoHome();
-                        bool attach = arm2.DropPart(part_pose);
-                        // If part is dropped now, push it in gear_bin_vector
-                        if (!attach){
-                            gear_bin_vector.push_back({camera_frame.substr(8), part_pose}); // Storing the pose of the good gears inside gear_bin_vector
-                            --(task["gear_part"]);
-                            ROS_INFO_STREAM("Need to grab '" << task["gear_part"] << "' gear");
-                        }
-                    }
-                    qc_2_redFlag = false;
-                }
-            }
-            --gear_counter;
-        }
-        catch (tf2::TransformException &ex) {
-            ROS_WARN("%s\n",ex.what());
-        }
-    }
-    arm2.RobotGoHome();
-    ros::Duration(0.2).sleep();
-    arm2.SendRobotTo(arm2_transition_pose);
-    // arm2.SendRobotTo("linear_arm_actuator_joint", -1);
-    ros::Duration(1).sleep();
-    // ROS_INFO("[gear_check]: Called grab_gear()");
-    grab_gear();
-}
-
-void AriacSensorManager::grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr& image_msg){
-    ros::AsyncSpinner spinner(4);
-    spinner.start();
-
-    ros::Duration timeout(0.2);
-
-    size_t part_counter = 0; // for labeling number of gear part // --- Issue
-
-    for (auto & msg : image_msg->models){
-        geometry_msgs::TransformStamped transformStamped;
-        string frame_name = popped_incoming_part.second;
-        string bin_part_camera_frame = "lc_bin_1_" + frame_name;
-        try{
-            transformStamped = tfBuffer.lookupTransform("world", bin_part_camera_frame, ros::Time(0), timeout);
-            geometry_msgs::Pose part_pose;
-            part_pose.position.x = transformStamped.transform.translation.x;
-            part_pose.position.y = transformStamped.transform.translation.y;
-            part_pose.position.z = transformStamped.transform.translation.z;
-            part_pose.orientation.x = transformStamped.transform.rotation.x;
-            part_pose.orientation.y = transformStamped.transform.rotation.y;
-            part_pose.orientation.z = transformStamped.transform.rotation.z;
-            part_pose.orientation.w = transformStamped.transform.rotation.w;
-
-            if (!arm1_busy && (desired_parts_info.find(msg.type) != desired_parts_info.end())) {
-                arm1_busy = true;
-                arm1.SendRobotTo(arm1_bin_pose);
-                bool if_pick = arm1.PickPart(part_pose);
-                if (if_pick) {
-                    ///------------- Get orientation of the bin in kit_tray frame -----------
-                    geometry_msgs::PoseStamped StampedPose_in, StampedPose_out;
-                    StampedPose_in.header.frame_id = "world";
-                    StampedPose_in.pose = part_pose;
-                    StampedPose_out = tfBuffer.transform(StampedPose_in, "kit_tray_1");
-                    geometry_msgs::Pose part_pose_kit = StampedPose_out.pose;
-
-                    tf2::Quaternion quat_tf;
-                    tf2::fromMsg(part_pose_kit.orientation, quat_tf);
-                    double part_R, part_P, part_Y;
-                    tf2::Matrix3x3(quat_tf).getRPY(part_R, part_P, part_Y);
-
-                    // ROS_INFO_STREAM("Part roll in kit_tray_frame = " << part_R);
-                    // ROS_INFO_STREAM("Part pitch in kit_tray_frame = " << part_P);
-                    // ROS_INFO_STREAM("Part yall in kit_tray_frame= " << part_Y);
-
-                    transformStamped = tfBuffer.lookupTransform("kit_tray_1", "arm1_ee_link", ros::Time(0),
-                                                               timeout);
-                    geometry_msgs::Pose ee_pose;
-                    ee_pose.orientation.x = transformStamped.transform.rotation.x;
-                    ee_pose.orientation.y = transformStamped.transform.rotation.y;
-                    ee_pose.orientation.z = transformStamped.transform.rotation.z;
-                    ee_pose.orientation.w = transformStamped.transform.rotation.w;
-
-                    double ee_R, ee_P, ee_Y;
-                    tf2::Quaternion quat_tf_ee;
-                    tf2::fromMsg(ee_pose.orientation, quat_tf_ee);
-                    tf2::Matrix3x3(quat_tf_ee).getRPY(ee_R, ee_P, ee_Y);
-
-                    // ROS_INFO_STREAM("EE roll in kit_tray_frame = " << ee_R);
-                    // ROS_INFO_STREAM("EE pitch in kit_tray_frame = " << ee_P);
-                    // ROS_INFO_STREAM("EE yall in kit_tray_frame= " << ee_Y);
-
-                    double part_ee_ang_diff = part_Y - ee_Y;
-                    ///----------modification end ----------------------
-                    arm1.SendRobotTo(arm1_bin_pose);
-                    try {
-                        auto itr = desired_parts_info.find(msg.type);
-                        auto drop_pose_ = itr->second;
-                        geometry_msgs::PoseStamped StampedPose_in, StampedPose_out;
-                        StampedPose_in.header.frame_id = "kit_tray_1";
-                        StampedPose_in.pose = drop_pose_;
-                        StampedPose_out = tfBuffer.transform(StampedPose_in, "world");
-                        auto drop_pose = StampedPose_out.pose;
-                        drop_pose.position.z += 0.05;
-
-                        ///--------Get Deisred RPY from kit_tray
-                        tf2::Quaternion quat_D;
-                        tf2::fromMsg(drop_pose_.orientation, quat_D);
-                        double d_R, d_P, d_Y;
-                        tf2::Matrix3x3(quat_D).getRPY(d_R, d_P, d_Y);
-
-                        arm1.GoToTarget1(drop_pose);
-                        ros::Duration(0.5).sleep();
-                        double comp = d_Y -  part_ee_ang_diff;
-                        arm1.SendRobotTo("wrist_3_joint", comp);
-                        ros::Duration(1).sleep();
-                        arm1.GripperToggle(false);
-                        ///--------------------------------------------------------
-                        // bool attach = arm1.DropPart(drop_pose);
-                        arm1.RobotGoHome();
-                        desired_parts_info.erase(itr);
-                    }
-                    catch (tf2::TransformException &ex) {
-                        ROS_WARN("%s\n", ex.what());
-                    }
-                }
-                arm1_busy = false;
-                ++part_counter;
-            }
-        }
-        catch (tf2::TransformException &ex) {
-            ROS_WARN("%s\n",ex.what());
-        }
-    }
-}
-
-// void AriacSensorManager::lc_agv_1_callback(const osrf_gear::LogicalCameraImage::ConstPtr & image_msg){
-//     ros::AsyncSpinner spinner(4);
-//     spinner.start();
-
-//     if (image_msg->models.size() == 0)
-//         return;
-
-//     ROS_INFO_STREAM_THROTTLE(5, "[lc_agv_1_callback]: lc_agv_1 captures '" << image_msg->models.size() << "' item(s).");
-
-//     ros::Duration timeout(0.2);
-
-//     size_t part_counter = 0;
-//     for (auto & msg : image_msg->models){
-//         geometry_msgs::TransformStamped transformStamped;
-//         string camera_frame = "lc_agv_1_" + msg.type + "_" + to_string(part_counter) + "_frame";
-//         try{
-//             transformStamped = tfBuffer.lookupTransform("world", camera_frame, ros::Time(0), timeout);
-//             geometry_msgs::Pose part_pose;
-//             part_pose.position.x = transformStamped.transform.translation.x;
-//             part_pose.position.y = transformStamped.transform.translation.y;
-//             part_pose.position.z = transformStamped.transform.translation.z;
-//             part_pose.orientation.x = transformStamped.transform.rotation.x;
-//             part_pose.orientation.y = transformStamped.transform.rotation.y;
-//             part_pose.orientation.z = transformStamped.transform.rotation.z;
-//             part_pose.orientation.w = transformStamped.transform.rotation.w;
-
-//             geometry_msgs::PoseStamped StampedPose_in, StampedPose_out;
-//             StampedPose_in.header.frame_id = "world";
-//             StampedPose_in.pose = part_pose;
-//             StampedPose_out = tfBuffer.transform(StampedPose_in, "kit_tray_1");
-//             auto agv_pose = StampedPose_out.pose;
-
-//             ROS_INFO_STREAM("[lc_agv_1_callback]: Part pose on the tray in kit_tray_1 frame is:\n" << part_pose);
-//         }
-//         catch (tf2::TransformException &ex) {
-//             ROS_WARN("%s\n",ex.what());
-//         }
-//     // }
-// }
-
-//
-//void AriacSensorManager::pick_part_from_belt(pair<string, string> incoming_part){
-//    // ros::AsyncSpinner spinner(4);
-//    // spinner.start();
-//    popped_incoming_part = incoming_part;
-//    auto part_pose = belt_part_map[incoming_part.second];
-//
-//    bool if_pick = arm1.PickPart(part_pose);
-//    if (if_pick){
-//
-//        /// ---------checking mechanism --------------------
-//        qc_1_sub = sensor_nh_.subscribe("/ariac/quality_control_sensor_1", 10,
-//                                        & AriacSensorManager::qc_1_callback, this);
-//        arm1.SendRobotTo(arm1_check_qc_pose);
-//        arm1.GripperToggle(false);
-//        ros::Duration timeout(0.2);
-//
-//        geometry_msgs::TransformStamped transformStamped;
-//        transformStamped = tfBuffer.lookupTransform("world", "arm1_ee_link", ros::Time(0), timeout);
-//        geometry_msgs::Pose ee1_pose;
-//        ee1_pose.position.x = transformStamped.transform.translation.x;
-//        ee1_pose.position.y = transformStamped.transform.translation.y;
-//        ee1_pose.position.z = transformStamped.transform.translation.z;
-//        ee1_pose.position.z -= 0.15;
-//
-//        arm1.SendRobotTo("shoulder_pan_joint", 1.6);
-//        ros::Duration(0.5).sleep();
-//        qc_1_sub.shutdown();
-//        arm1.SendRobotTo("shoulder_pan_joint", 1.44);
-//
-//        bool if_pick_tray = arm1.PickPart(ee1_pose);
-//        ROS_INFO_STREAM("qc_1_redFlag = " << qc_1_redFlag);
-//        while (!if_pick_tray) {
-//            ee1_pose.position.z -= 0.015;
-//            if_pick_tray = arm1.PickPart(ee1_pose);
-//        }
-//        /// ---------checking mechanism --------------------
-//
-//
-//        if (qc_1_redFlag) { // if the one below the camera is a faulty one
-//            ROS_INFO_STREAM("QC 1 detected a faulty part, ready to dispose....");
-//            arm1.SendRobotTo("shoulder_pan_joint", 2.32);
-//            arm1.GripperToggle(false);
-//        }
-//        else { // if the one below the camera is a good one
-//            arm1.SendRobotTo(arm1_bin_pose);
-//            arm1.GripperToggle(false);
-//            --(task[incoming_part.first]);
-//            parts_to_pickup_belt.erase(incoming_part.first);
-//
-//        }
-//        qc_1_redFlag = false;
-//        arm1.RobotGoHome();
-//    }
-//    arm1_busy = false;
-//}
-
-
-void AriacSensorManager::grab_gear(){
-    ros::AsyncSpinner spinner(4);
-    spinner.start();
-
-    geometry_msgs::TransformStamped transformStamped;
-    ros::Duration timeout(0.2);
-
-    size_t part_counter = 0;
-    for (auto & msg : gear_bin_vector){
-        try{
-            geometry_msgs::Pose part_pose = msg.second;
-            if (!arm1_busy && (desired_parts_info.find("gear_part") != desired_parts_info.end())){
-                arm1_busy = true;
-                arm1.SendRobotTo(arm1_bin_pose);
-                arm1.SendRobotTo("linear_arm_actuator_joint",-1.2);
-
-                bool if_pick = arm1.PickPart(part_pose);
-                if (if_pick) {
-                    // get part pose in kit_tray_frame
-                    geometry_msgs::PoseStamped StampedPose_in, StampedPose_out;
-                    StampedPose_in.header.frame_id = "world";
-                    StampedPose_in.pose = part_pose;
-                    StampedPose_out = tfBuffer.transform(StampedPose_in, "kit_tray_1");
-                    geometry_msgs::Pose part_pose_kit = StampedPose_out.pose;
-
-                    // get part RPY in kit_tray_frame
-                    tf2::Quaternion quat_tf;
-                    tf2::fromMsg(part_pose_kit.orientation, quat_tf);
-                    double part_R, part_P, part_Y;
-                    tf2::Matrix3x3(quat_tf).getRPY(part_R, part_P, part_Y);
-
-                    // get ee pose in kit_tray_frame
-                    transformStamped = tfBuffer.lookupTransform("kit_tray_1", "arm1_ee_link", ros::Time(0),
-                                                               timeout);
-                    geometry_msgs::Pose ee_pose;
-                    ee_pose.orientation.x = transformStamped.transform.rotation.x;
-                    ee_pose.orientation.y = transformStamped.transform.rotation.y;
-                    ee_pose.orientation.z = transformStamped.transform.rotation.z;
-                    ee_pose.orientation.w = transformStamped.transform.rotation.w;
-
-                    // get ee RPY in kit_tray_frame
-                    double ee_R, ee_P, ee_Y;
-                    tf2::Quaternion quat_tf_ee;
-                    tf2::fromMsg(ee_pose.orientation, quat_tf_ee);
-                    tf2::Matrix3x3(quat_tf_ee).getRPY(ee_R, ee_P, ee_Y);
-
-                    double part_ee_ang_diff = part_Y - ee_Y;
-                    ///----------modification end ----------------------
-
-                    arm1.SendRobotTo(arm1_bin_pose);
-                    try{
-                        auto itr = desired_parts_info.find("gear_part");
-                        auto drop_pose_ = itr->second;
-                        geometry_msgs::PoseStamped StampedPose_in, StampedPose_out;
-                        StampedPose_in.header.frame_id = "kit_tray_1";
-                        StampedPose_in.pose = drop_pose_;
-                        StampedPose_out = tfBuffer.transform(StampedPose_in, "world");
-                        auto drop_pose = StampedPose_out.pose;
-                        drop_pose.position.z += 0.05;
-
-
-                        ///--------Get Deisred RPY from kit_tray
-                        tf2::Quaternion quat_D;
-                        tf2::fromMsg(drop_pose_.orientation, quat_D);
-                        double d_R, d_P, d_Y;
-                        tf2::Matrix3x3(quat_D).getRPY(d_R, d_P, d_Y);   
-
-                        arm1.GoToTarget1(drop_pose);
-                        ros::Duration(0.5).sleep();
-                        double comp = -(d_Y -  part_ee_ang_diff);
-                        arm1.SendRobotTo("wrist_3_joint", comp);
-                        ros::Duration(1).sleep();
-                        arm1.GripperToggle(false);
-                        ///--------------------------------------------------------
-
-
-                        // bool attach = arm1.DropPart(drop_pose);
-                        desired_parts_info.erase(itr);
-                    }
-                    catch (tf2::TransformException &ex) {
-                        // ROS_INFO_STREAM("[grab_gear]: grab_bin1 error");
-                        ROS_WARN("%s\n",ex.what());
-                    }
-                }
-                arm1_busy = false;
-            }
-            ++part_counter;
-        }
-        catch (tf2::TransformException &ex) {
-            ROS_WARN("%s\n",ex.what());
-        }
-    }
-    arm1.RobotGoHome();
 }

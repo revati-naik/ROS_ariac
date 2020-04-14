@@ -1,8 +1,8 @@
-## **ENPM809B: Building a Manufacturing Robot Software System: RWA-5**
+## **ENPM809B: Building a Manufacturing Robot Software System: RWA-4**
 
 This is README to run the ROS package created for RWA4. 
 
-## **Package Name: group7_rwa5**
+## **Package Name: group7_rwa4**
 This package builts an entire kit for the RWA4. It detects for faulty parts and replaces them.
 
 
@@ -27,7 +27,7 @@ You should also have moveit_visual_tools installed if not installed previously. 
 
 2.  Extract the package to `~/catkin_ws/src/` as below
 
-      `~/catkin_ws/src/group7_rwa5`
+      `~/catkin_ws/src/group7_rwa4`
          
 3. Source the setup.bash to add environment variables to your path to allow ROS to function
 
@@ -38,11 +38,11 @@ You should also have moveit_visual_tools installed if not installed previously. 
 
       `cd ~/catkin_ws`
 
-      `catkin_make --only-pkg-with-deps group7_rwa5`
+      `catkin_make --only-pkg-with-deps group7_rwa4`
 
   You can alternatively use following command to build only group7_rwa3 package.
 
-      `catkin_make --only-pkg-with-deps group7_rwa5`
+      `catkin_make --only-pkg-with-deps group7_rwa4`
 
   Note: Always call `catkin_make` in the root of your catkin workspace. 
 
@@ -62,7 +62,7 @@ Ensure that you are inside your workspace directory
 
 	`source devel/setup.bash`
 
-	`roslaunch group7_rwa5 group7_rwa5.launch`
+	`roslaunch group7_rwa4 group7_rwa4.launch`
 
 
 	In terminal 2 (For starting motionplanning for arms through Moveit):
@@ -87,7 +87,7 @@ Ensure that you are inside your workspace directory
 	 
 	`source devel/setup.bash`
 
-	`rosrun group7_rwa5 main_node`
+	`rosrun group7_rwa4 main_node`
 
 
 
