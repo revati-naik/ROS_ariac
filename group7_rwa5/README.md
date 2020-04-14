@@ -1,9 +1,9 @@
-## **ENPM809B: Building a Manufacturing Robot Software System: RWA-4**
+## **ENPM809B: Building a Manufacturing Robot Software System: RWA-5**
 
-This is README to run the ROS package created for RWA4. 
+This is README to run the ROS package created for RWA5. 
 
-## **Package Name: group7_rwa4**
-This package builts an entire kit for the RWA4. It detects for faulty parts and replaces them.
+## **Package Name: group7_rwa5**
+This package builts an entire kit for the RWA5. It detects for faulty parts and replaces them.
 
 
 ## **Minimum System Requirements**
