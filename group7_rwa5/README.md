@@ -100,8 +100,14 @@ See how it works
 
 <p align="center">
 <img src="gifs/1.gif" alt="Pick and Place">
-<em>*This is the caption*</em>
+<em>Pick and Place</em>
+</p>
+
+<p align="center">
 <img src="gifs/2.gif" alt="Faulty Check">
+</p>
+
+<p align="center">
 <img src="gifs/3.gif" alt="In Process Order Update">
 </p>
 
