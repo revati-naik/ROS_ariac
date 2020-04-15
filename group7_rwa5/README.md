@@ -100,17 +100,25 @@ See how it works
 
 <p align="center">
 <img src="gifs/1.gif" alt="Pick and Place">
-	
+</p>
+<p align="center">
 <em>Pick and Place</em>
 </p>
 
 <p align="center">
 <img src="gifs/2.gif" alt="Faulty Check">
 </p>
+<p align="center">
+<em>Faulty Check</em>
+</p>
 
 <p align="center">
 <img src="gifs/3.gif" alt="In Process Order Update">
 </p>
+<p align="center">
+<em>In Process Order Update</em>
+</p>
+
 
 Access the below link to see the whole video!
 https://drive.google.com/drive/folders/1rmu-_D3-2d6kRLswu9rlon-fbD_DuJh7?usp=sharing
