@@ -99,9 +99,9 @@ In terminal 4:
 See how it works
 
 <p align="center">
-<img src="gifs/1.gif" >
-<img src="gifs/2.gif" >
-<img src="gifs/3.gif" >
+<img src="gifs/1.gif" alt="Pick and Place">
+<img src="gifs/2.gif" alt="Faulty Check">
+<img src="gifs/3.gif" alt="In Process Order Update">
 </p>
 
 Access the below link to see the whole video!
