@@ -46,6 +46,11 @@ public:
         const geometry_msgs::Pose&);
     bool DropPart2(geometry_msgs::Pose);
     bool PickPart2(const geometry_msgs::Pose&, const geometry_msgs::Pose&);
+    std::map<std::string, double> home_joint_pose_1;
+    std::map<std::string, double> home_joint_pose_2;
+
+    std::map<std::string, double> check_qc_pose;
+    geometry_msgs::Pose throw_away_pose;
 
 private:
     // subscriber of other arm's linear actuactor pose
@@ -80,7 +85,6 @@ private:
     bool plan_success_;
 
     std::map<std::string, double> home_joint_pose_0;
-    std::map<std::string, double> home_joint_pose_1;
     // std::vector<double> home_joint_pose_;
     // std::vector<double> end_position_;
     std::map<std::string, double> end_position_;

@@ -25,66 +25,92 @@ RobotController::RobotController(std::string arm_id) :
     // robot_move_group_.setEndEffector("moveit_ee");
     robot_move_group_.allowReplanning(true);
 
-    
+
+
+    home_joint_pose_1["linear_arm_actuator_joint"] = 0;
+    home_joint_pose_1["shoulder_pan_joint"] = 3.14;
+    home_joint_pose_1["shoulder_lift_joint"] = -1.2;
+    home_joint_pose_1["elbow_joint"] = 2.01;
+    home_joint_pose_1["wrist_1_joint"] = -2.40;
+    home_joint_pose_1["wrist_2_joint"] = -1.55;
+    home_joint_pose_1["wrist_3_joint"] = 0;
 
     ////////////modified
     //--These are joint positions used for the home position
     // home_joint_pose_ = {0.0, 3.1, -1.1, 1.9, 3.9, 4.7, 0};
 
     if (arm_id == "arm1"){
-        // ROS_INFO_STREAM("Arm1 should go home");
-        // home_joint_pose_1["linear_arm_actuator_joint"] = 0.56;
-        // SendRobotTo("linear_arm_actuator_joint", home_joint_pose_1["linear_arm_actuator_joint"]);
-        // home_joint_pose_1["shoulder_pan_joint"] = 0;
-        // SendRobotTo("shoulder_pan_joint", home_joint_pose_1["shoulder_pan_joint"]);
-        // home_joint_pose_1["shoulder_lift_joint"] = -0.8;
-        // SendRobotTo("shoulder_pan_joint", home_joint_pose_1["shoulder_pan_joint"]);
-        // home_joint_pose_1["elbow_joint"] = 1.6;
-        // SendRobotTo("elbow_joint", home_joint_pose_1["elbow_joint"]);
-        // home_joint_pose_1["wrist_1_joint"] = 3.9;
-        // home_joint_pose_1["wrist_2_joint"] = -1.57;
-        // // home_joint_pose_1["wrist_3_joint"] = 0;
-        // for (const auto & mapItem: home_joint_pose_1)
-        //     SendRobotTo(mapItem.first, mapItem.second);
-        // RobotGoHome();
 
-        home_joint_pose_1["linear_arm_actuator_joint"] = 0.56;
-        home_joint_pose_1["shoulder_lift_joint"] = -0.8;
-        home_joint_pose_1["shoulder_pan_joint"] = 0;
-        home_joint_pose_1["wrist_1_joint"] = 3.9;
-        home_joint_pose_1["wrist_2_joint"] = -1.57;
-        home_joint_pose_1["elbow_joint"] = 1.6;
+        home_joint_pose_1["linear_arm_actuator_joint"] = 0.83;
+        home_joint_pose_1["shoulder_pan_joint"] = 1.48;
+        home_joint_pose_1["shoulder_lift_joint"] = -0.58;
+        home_joint_pose_1["elbow_joint"] = 1.14;                //nakul
+        home_joint_pose_1["wrist_1_joint"] = 4.18;
+        home_joint_pose_1["wrist_2_joint"] = -1.51;
         home_joint_pose_1["wrist_3_joint"] = 0;
+
         this->SendRobotTo(home_joint_pose_1);
 
-        // home_joint_pose_1["wrist_3_joint"] = 0;
-        // for (const auto & mapItem: home_joint_pose_1)
-        //     SendRobotTo(mapItem.first, mapItem.second);
+        home_joint_pose_2["linear_arm_actuator_joint"] = -0.21;
+        home_joint_pose_2["shoulder_pan_joint"] = 2.86;
+        home_joint_pose_2["shoulder_lift_joint"] = -1.2;
+        home_joint_pose_2["elbow_joint"] = 2.01;
+        home_joint_pose_2["wrist_1_joint"] = 4.18;
+        home_joint_pose_2["wrist_2_joint"] = -1.55;
+        home_joint_pose_2["wrist_3_joint"] = 0;
+//        this->SendRobotTo(home_joint_pose_1);
 
+        check_qc_pose = home_joint_pose_1;
+
+        throw_away_pose.position.x = 0.2-0.4;
+        throw_away_pose.position.y = 3.0 ;
+        throw_away_pose.position.z = 0.85 + 0.2;
+        throw_away_pose.orientation.x = 0;
+        throw_away_pose.orientation.y = 0;
+        throw_away_pose.orientation.z = 0;
+        throw_away_pose.orientation.w = 1;
 
         offset_ = 0.02;
     }
     else{
         ROS_INFO_STREAM("Arm2 should go home");
 
-        // home_joint_pose_1["linear_arm_actuator_joint"] = -0.56;
-        // home_joint_pose_1["shoulder_pan_joint"] = 2;
-        // home_joint_pose_1["shoulder_lift_joint"] = 0;
-        // home_joint_pose_1["elbow_joint"] = 0;
-        // home_joint_pose_1["wrist_1_joint"] = -3.14/2;
-        // home_joint_pose_1["wrist_2_joint"] = -3.14/2;
-        // home_joint_pose_1["wrist_3_joint"] = 0;
-        // for (const auto & mapItem: home_joint_pose_1)
-        //     this->SendRobotTo(mapItem.first, mapItem.second);
+        home_joint_pose_2["linear_arm_actuator_joint"] = 0;
+        home_joint_pose_2["shoulder_pan_joint"] = 3.14;
+        home_joint_pose_2["shoulder_lift_joint"] = -1.2;
+        home_joint_pose_2["elbow_joint"] = 2.01;
+        home_joint_pose_2["wrist_1_joint"] = 4.15;
+        home_joint_pose_2["wrist_2_joint"] = -1.51;
+        home_joint_pose_2["wrist_3_joint"] = 0;
 
-        home_joint_pose_1["linear_arm_actuator_joint"] = -0.21;
-        home_joint_pose_1["shoulder_pan_joint"] = 1.78;
-        home_joint_pose_1["shoulder_lift_joint"] = -0.50;
-        home_joint_pose_1["elbow_joint"] = 1.38;
-        home_joint_pose_1["wrist_1_joint"] = -2.51;
+        home_joint_pose_1["linear_arm_actuator_joint"] = -0.82;
+        home_joint_pose_1["shoulder_pan_joint"] = 4.62;
+        home_joint_pose_1["shoulder_lift_joint"] = -0.57;
+        home_joint_pose_1["elbow_joint"] = 1.13;
+        home_joint_pose_1["wrist_1_joint"] = 4.15;
         home_joint_pose_1["wrist_2_joint"] = -1.51;
         home_joint_pose_1["wrist_3_joint"] = 0;
+
         this->SendRobotTo(home_joint_pose_1);
+
+        check_qc_pose = home_joint_pose_1;
+//        check_qc_pose["linear_arm_actuator_joint"] = -0.87;
+//        check_qc_pose["shoulder_pan_joint"] = 4.6;
+//        check_qc_pose["elbow_joint"] = 0;
+//        check_qc_pose["shoulder_lift_joint"] = 0;
+//        check_qc_pose["wrist_1_joint"] = -1.57;
+//        check_qc_pose["wrist_2_joint"] = -3.14/2;
+
+        throw_away_pose.position.x = 0.2-0.4;
+        throw_away_pose.position.y = -3.35 + 0.5;
+        throw_away_pose.position.z = 0.85 + 0.2;
+        throw_away_pose.orientation.x = 0;
+        throw_away_pose.orientation.y = 0;
+        throw_away_pose.orientation.z = 0;
+        throw_away_pose.orientation.w = 1;
+
+//        home_joint_pose_2 = home_joint_pose_1;
+
         offset_ = 0.0275;
     }
 
@@ -384,15 +410,13 @@ bool RobotController::PickPart(const geometry_msgs::Pose& part_pose) {
     this->GripperToggle(true);
     this->GoToTarget({stand_by_pose, contact_pose});
     ros::spinOnce();
-    if (id == "arm2"){
-        while (!gripper_state_) {
-            // contact_pose.position.z -= 0.005;
-            contact_pose.position.z -= 0.005;
-            this->GripperToggle(true);
-            this->GoToTarget({stand_by_pose, contact_pose});
-            // ROS_INFO_STREAM("Actuating the gripper...");
-            ros::spinOnce();
-        }
+    while (!gripper_state_) {
+        // contact_pose.position.z -= 0.005;
+        contact_pose.position.z -= 0.005;
+        this->GripperToggle(true);
+        this->GoToTarget({stand_by_pose, contact_pose});
+        // ROS_INFO_STREAM("Actuating the gripper...");
+        ros::spinOnce();
     }
     // ROS_INFO_STREAM("Get things");
 

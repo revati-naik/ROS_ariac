@@ -109,8 +109,10 @@ private:
     std::map<std::string, std::vector<geometry_msgs::Pose>> order_update_copy;
 
     std::map<std::string, std::vector<geometry_msgs::Pose>> built_kit_product_type_pose_;
-
     std::map<std::string, std::vector<geometry_msgs::Pose>> parts_to_remove_product_type_pose_;
+
+    RobotController* this_arm;
+    RobotController* that_arm;
 
 
 
@@ -139,31 +141,34 @@ public:
     void BuildProductFrames(int camera_id);
     geometry_msgs::Pose GetPartPose(const std::string& src_frame,
                                                         const std::string& target_frame);
-    bool PickAndPlace(const std::pair<std::string,geometry_msgs::Pose> product_type_pose, int agv_id);
+//    bool PickAndPlace(const std::pair<std::string,geometry_msgs::Pose> product_type_pose, int agv_id, RobotController& arm);
     std::string GetProductFrame(std::string product_type);
     void ExecuteOrder();
-    void UpdateKit();
+    void UpdateKit(int agv_id);
     void PickAndThrow(geometry_msgs::Pose part_pose, std::string product_type, RobotController& arm);
     void CorrectPose(geometry_msgs::Pose current_pose, geometry_msgs::Pose updated_pose,
-                                         std::string product_type, int agv_id);
+                                         std::string product_type, int agv_id, RobotController& arm);
     bool QualityCheck(int agv_id);
     void buildUpdatedKitMap();
     void WhatToRemove();
     void WhatToModify();
     void WhatToAdd();
 
-    void removeParts();
-    void modifyPose();
-    void addParts();
+    void removeParts(int agv_id, RobotController& arm);
+    void modifyPose(int agv_id);
+    void addParts(int agv_id);
 
-    void ReExecute();
+    void ReExecute(int agv_id);
     void SubmitAGV(int num);
 
     geometry_msgs::Pose kitToWorld(geometry_msgs::Pose part_pose, int agv_id);
+//    bool PickAndPlace(const std::pair<std::string, geometry_msgs::Pose>, int agv_id, RobotController& arm);
+    bool PickAndPlace(const std::pair<std::string, geometry_msgs::Pose> product_type_pose,
+                                          int agv_id, RobotController& arm);
 
-    void grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr&);
-    void lc_agv_1_callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
-    void grab_gear();
+//    void grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr&);
+//    void lc_agv_1_callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
+//    void grab_gear();
 
     bool init_, everything_ready;
 };
