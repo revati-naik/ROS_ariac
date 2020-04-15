@@ -95,3 +95,6 @@ In terminal 4:
 	cd ~/catkin_ws
 	source devel/setup.bash
     rosrun group7_rwa5 main_node
+
+Access the below link to see how it works!
+https://drive.google.com/drive/folders/1rmu-_D3-2d6kRLswu9rlon-fbD_DuJh7?usp=sharing
