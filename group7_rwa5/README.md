@@ -96,7 +96,7 @@ In terminal 4:
 	source devel/setup.bash
     rosrun group7_rwa5 main_node
 
-See how it works
+## **See how it works**
 
 <p align="center">
 <img src="gifs/1.gif" alt="Pick and Place">
