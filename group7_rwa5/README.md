@@ -73,33 +73,25 @@ Ensure that you are inside your workspace directory
 
 In terminal 1:
 
-	`cd ~/catkin_ws`
-
-	`source devel/setup.bash`
-
-	`roslaunch group7_rwa5 group7_rwa5.launch`
+	cd ~/catkin_ws
+	source devel/setup.bash
+	roslaunch group7_rwa5 group7_rwa5.launch
 
 
 In terminal 2 (to use moveit interface for arm1):
 
-	`cd ~/catkin_ws`
-
-	`source install/setup.bash`
-
-	`roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm1`
+	cd ~/catkin_ws
+	source install/setup.bash
+	roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm1
 
 In terminal 3 (to use moveit interface for arm2):
 
-	`cd ~/catkin_ws`
-
-	`source install/setup.bash`
-
-	`roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm2`
+	cd ~/catkin_ws
+	source install/setup.bash
+    roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm2
 
 In terminal 4:
 
-	`cd ~/catkin_ws`
-	 
-	`source devel/setup.bash`
-
-	`rosrun group7_rwa5 main_node`
+	cd ~/catkin_ws
+	source devel/setup.bash
+    rosrun group7_rwa5 main_node
