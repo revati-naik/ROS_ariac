@@ -36,7 +36,8 @@ You should also have moveit_visual_tools installed if not installed previously. 
 
   `sudo apt-get install ros-melodic-moveit-visual-tools`
 
-## **Instructions to RUN the package**
+## **Before you run the package, you need to build it. Here's how**
+
 1. Create and build a catkin workspace
 
       `mkdir -p ~/catkin_ws/src`
@@ -47,7 +48,7 @@ You should also have moveit_visual_tools installed if not installed previously. 
 
       `~/catkin_ws/src/group7_rwa5`
          
-3. Source the setup.bash to add environment variables to your path to allow ROS to function
+3. Source the `setup.bash` to add environment variables to your path to allow ROS to function
 
       `source /opt/ros/melodic/setup.bash`
       `source ~/catkin_ws/devel/setup.bash`
@@ -64,46 +65,33 @@ You should also have moveit_visual_tools installed if not installed previously. 
 
   Note: Always call `catkin_make` in the root of your catkin workspace. 
 
-5. Overlay your catkin workspace on top of your environment.
-
-     `cd ~/catkin_ws`
-
-     `source devel/setup.bash`
  
-## **Launch the Package**
+## **How to Execute the package**
 
-To run the environment and the node, open another terminal and run the following command
+To run the environment and the node, follow the instructions below.
 Ensure that you are inside your workspace directory
 
 In terminal 1:
 
-	`cd ~/catkin_ws`
-
-	`source devel/setup.bash`
-
-	`roslaunch group7_rwa5 group7_rwa5.launch`
+	cd ~/catkin_ws
+	source devel/setup.bash
+	roslaunch group7_rwa5 group7_rwa5.launch
 
 
 In terminal 2 (to use moveit interface for arm1):
 
-	`cd ~/catkin_ws`
-
-	`source install/setup.bash`
-
-	`roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm1`
+	cd ~/catkin_ws
+	source install/setup.bash
+	roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm1
 
 In terminal 3 (to use moveit interface for arm2):
 
-	`cd ~/catkin_ws`
-
-	`source install/setup.bash`
-
-	`roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm2`
+	cd ~/catkin_ws
+	source install/setup.bash
+    roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm2
 
 In terminal 4:
 
-	`cd ~/catkin_ws`
-	 
-	`source devel/setup.bash`
-
-	`rosrun group7_rwa5 main_node`
+	cd ~/catkin_ws
+	source devel/setup.bash
+    rosrun group7_rwa5 main_node
