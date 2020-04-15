@@ -99,9 +99,9 @@ In terminal 4:
 See how it works
 
 <p align="center">
-<img src="gifs/1.gif" width="400">
-<img src="gifs/2.gif" width="400">
-<img src="gifs/3.gif" width400">
+<img src="gifs/1.gif" width="600">
+<img src="gifs/2.gif" width="600">
+<img src="gifs/3.gif" width="600">
 </p>
 
 Access the below link to see the whole video!
