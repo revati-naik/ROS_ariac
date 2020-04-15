@@ -100,6 +100,7 @@ See how it works
 
 <p align="center">
 <img src="gifs/1.gif" alt="Pick and Place">
+	
 <em>Pick and Place</em>
 </p>
 
