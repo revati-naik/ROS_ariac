@@ -96,5 +96,13 @@ In terminal 4:
 	source devel/setup.bash
     rosrun group7_rwa5 main_node
 
-Access the below link to see how it works!
+See how it works
+
+<p align="center">
+<img src="gifs/1.gif" width="260">
+<img src="gifs/2.gif" width="266">
+<img src="gifs/3.gif" width="260">
+</p>
+
+Access the below link to see the whole video!
 https://drive.google.com/drive/folders/1rmu-_D3-2d6kRLswu9rlon-fbD_DuJh7?usp=sharing
