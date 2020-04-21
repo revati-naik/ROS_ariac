@@ -1,9 +1,9 @@
-## **ENPM809B: Building a Manufacturing Robot Software System: RWA-5**
+## **ENPM809B: Building a Manufacturing Robot Software System: Final Project**
 
-This is README to run the ROS package created for RWA5. 
+This is README to run the ROS package created for Final Project. 
 
 ## **Package Name: group7_final_project**
-* This package builts an entire kit for the RWA5. 
+* This package builts an entire kit for the Final Project. 
 * It builds a whole kit based on the order.
 * It has the abilty to detect faulty parts and replace them.
 * It also checks for the updates to an order.
@@ -18,7 +18,7 @@ This is README to run the ROS package created for RWA5.
   * gazebo_ros_pkgs 
 
 ## gazebo_ros_pkgs
-gazebo_ros_pkgs package should be available in the workspace to run group7_rwa5. Use the following command to 
+gazebo_ros_pkgs package should be available in the workspace to run group7_final_project. Use the following command to 
 clone the package and get it working
 
 `cd ~/catkin_ws/src`
@@ -46,7 +46,7 @@ You should also have moveit_visual_tools installed if not installed previously. 
 
 2.  Extract the package to `~/catkin_ws/src/` as below
 
-      `~/catkin_ws/src/group7_rwa5`
+      `~/catkin_ws/src/group7_final_project`
          
 3. Source the `setup.bash` to add environment variables to your path to allow ROS to function
 
@@ -59,9 +59,9 @@ You should also have moveit_visual_tools installed if not installed previously. 
 
       `catkin_make`
 
-    You can alternatively use following command to build only group7_rwa5 package.
+    You can alternatively use following command to build only group7_final_project package.
   
-    `catkin_make --only-pkg-with-deps group7_rwa5`
+    `catkin_make --only-pkg-with-deps group7_final_project`
 
   Note: Always call `catkin_make` in the root of your catkin workspace. 
 
@@ -75,7 +75,7 @@ In terminal 1:
 
 	cd ~/catkin_ws
 	source devel/setup.bash
-	roslaunch group7_rwa5 group7_rwa5.launch
+	roslaunch group7_final_project group7_final_project.launch
 
 
 In terminal 2 (to use moveit interface for arm1):
@@ -88,10 +88,37 @@ In terminal 3 (to use moveit interface for arm2):
 
 	cd ~/catkin_ws
 	source install/setup.bash
-    roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm2
+	roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm2
 
 In terminal 4:
 
 	cd ~/catkin_ws
 	source devel/setup.bash
-    rosrun group7_rwa5 main_node
+    	rosrun group7_final_project main_node
+
+## **See how it works**
+
+<p align="center">
+<img src="gifs/1.gif" alt="Pick and Place">
+</p>
+<p align="center">
+<em>Pick and Place</em>
+</p>
+
+<p align="center">
+<img src="gifs/2.gif" alt="Faulty Check">
+</p>
+<p align="center">
+<em>Faulty Check</em>
+</p>
+
+<p align="center">
+<img src="gifs/3.gif" alt="In Process Order Update">
+</p>
+<p align="center">
+<em>In Process Order Update</em>
+</p>
+
+
+Access the below link to see the whole video!
+https://drive.google.com/drive/folders/1rmu-_D3-2d6kRLswu9rlon-fbD_DuJh7?usp=sharing
