@@ -41,6 +41,8 @@ private:
     ros::Subscriber qc_1_sub; // Subscribe to the '/ariac/quality_control_sensor_2' topic
     ros::Subscriber lc_bin_1_sub; // Subscribe to the '/ariac/lc_gear' topic
     ros::Subscriber lc_agv_1_sub;
+    ros::Subscriber lc_agv_2_sub;
+
     ros::Subscriber lc_bin_2_sub; // Subscribe to the '/ariac/lc_gear' topic
     ros::Subscriber lc_bin_3_sub; // Subscribe to the '/ariac/lc_gear' topic
     ros::Subscriber lc_bin_4_sub; // Subscribe to the '/ariac/lc_gear' topic
@@ -58,7 +60,7 @@ private:
     std::unordered_map<std::string, geometry_msgs::Pose> belt_part_map; // map for checked part from the belt
     std::unordered_map<std::string, geometry_msgs::Pose> gear_bin_map; // map for checked part in the bin
 //    std::queue<std::pair<std::string, std::string>> incoming_partQ; // the queue store (part_type, part_frame_name) from the belt
-    std::queue<std::string> incoming_partQ; // the queue store (part_type, part_frame_name) from the belt
+    std::queue<std::pair<std::string, int>> incoming_partQ; // the queue store (part_type, part_frame_name) from the belt
 
     std::pair<std::string, std::string> popped_incoming_part;
     std::unordered_map<std::string, unsigned int> belt_part_counter; // map which calculate # of part_type from belt
@@ -113,15 +115,17 @@ private:
     std::map<std::string, std::vector<geometry_msgs::Pose>> parts_to_remove_product_type_pose_;
 
     std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_belt;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_belt_temp;
     std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_bin_reachable;
     std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_bin_unreachable;
+//    std::unordered_map<std::string, unsigned int> belt_part_counter; // map which calculate # of part_type from belt
 
 
     RobotController* this_arm;
     RobotController* that_arm;
 
     int agv_id_global;
-
+    int test_counter;
 
 
 
@@ -146,6 +150,10 @@ public:
     void lc_bin_4_callback(const osrf_gear::LogicalCameraImage::ConstPtr & image_msg);
     void lc_bin_5_callback(const osrf_gear::LogicalCameraImage::ConstPtr & image_msg);
     void lc_bin_6_callback(const osrf_gear::LogicalCameraImage::ConstPtr & image_msg);
+
+    void lc_agv_1_callback(const osrf_gear::LogicalCameraImage::ConstPtr & image_msg);
+    void lc_agv_2_callback(const osrf_gear::LogicalCameraImage::ConstPtr & image_msg);
+
 
     void BuildProductFrames(int camera_id);
     geometry_msgs::Pose GetPartPose(const std::string& src_frame,
@@ -176,7 +184,7 @@ public:
                                           int agv_id, RobotController& arm);
     void SegregateParts(const std::pair<std::string, geometry_msgs::Pose> type_pose_, int agv_id);
     void PickAndPlaceFromBelt(geometry_msgs::Pose updated_pose,
-                                                  std::string product_type, int agv_id, RobotController& arm);
+            std::string product_type, int agv_id, int incoming_part_counter, RobotController& arm);
 //    void grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr&);
 //    void lc_agv_1_callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
 //    void grab_gear();
