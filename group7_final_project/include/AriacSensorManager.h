@@ -113,6 +113,7 @@ private:
 
     std::map<std::string, std::vector<geometry_msgs::Pose>> built_kit_product_type_pose_;
     std::map<std::string, std::vector<geometry_msgs::Pose>> parts_to_remove_product_type_pose_;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_to_place_in_other_tray;
 
     std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_belt;
     std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_belt_temp;
@@ -126,6 +127,7 @@ private:
 
     int agv_id_global;
     int test_counter;
+    bool belt_temp_flag;
 
 
 
@@ -185,6 +187,12 @@ public:
     void SegregateParts(const std::pair<std::string, geometry_msgs::Pose> type_pose_, int agv_id);
     void PickAndPlaceFromBelt(geometry_msgs::Pose updated_pose,
             std::string product_type, int agv_id, int incoming_part_counter, RobotController& arm);
+    void  PutPartsIntoOtherTray(geometry_msgs::Pose pick_pose,
+            geometry_msgs::Pose drop_pose, std::string product_type);
+    void  RemoveBeltParts();
+    void  AddBeltParts();
+
+
 //    void grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr&);
 //    void lc_agv_1_callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
 //    void grab_gear();

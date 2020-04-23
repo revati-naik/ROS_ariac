@@ -49,6 +49,7 @@ public:
     std::map<std::string, double> home_joint_pose_1;
     std::map<std::string, double> home_joint_pose_2;
     std::map<std::string, double> conveyer_pose;
+    std::map<std::string, double> rail_pick_trans_pose;
     geometry_msgs::Pose belt_pickup_pose;
 
     std::map<std::string, double> check_qc_pose;

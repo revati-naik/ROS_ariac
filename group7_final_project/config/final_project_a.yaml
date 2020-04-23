@@ -8,7 +8,6 @@
 # - The gripper is faulty and will drop a product over each AGV
 # - The trial as a whole has a time limit of 500 sec.
 
-
 time_limit: 500
 
 options:
@@ -27,8 +26,8 @@ orders:
   order_0:
     announcement_condition: time
     announcement_condition_value: 0.0
-    destinations: [agv1, agv2]
-    shipment_count: 2
+    destinations: [agv1]
+    shipment_count: 1
     products:
       part_0:
         type: order_part1
@@ -36,7 +35,7 @@ orders:
           xyz: [0.11, -0.21, 0]
           rpy: [0 , 0, 'pi/2']
       part_1:
-        type: order_part2
+        type: order_part3
         pose:
           xyz: [-0.11, -0.21, 0]
           rpy: [0, 0, '-pi/2']
@@ -46,18 +45,48 @@ orders:
           xyz: [0.13, 0.16, 0]
           rpy: [0, 0, 0]
       part_3:
-        type: order_part4
+        type: order_part5
         pose:
           xyz: [-0.11, 0.18, 0]
           rpy: [0, 0, 0]
-      part_4:
+#      part_4:
+#        type: order_part5
+#        pose:
+#          xyz: [0.0, 0.0, 0]
+#          rpy: ['pi', 0, 'pi']
+  order_0_update_0:
+    announcement_condition: wanted_products
+    announcement_condition_value: 2
+    shipment_count: 1
+    products:
+      part_0:
         type: order_part5
         pose:
-          xyz: [0.0, 0.0, 0]
-          rpy: ['pi', 0, 'pi']
+          xyz: [0.11, -0.21, 0]
+          rpy: [0 , 0, 'pi/2']
+      part_1:
+        type: order_part3
+        pose:
+          xyz: [-0.11, -0.21, 0]
+          rpy: [0, 0, '-pi/2']
+      part_2:
+        type: order_part3
+        pose:
+          xyz: [0.13, 0.16, 0]
+          rpy: [0, 0, 0]
+      part_3:
+        type: order_part1
+        pose:
+          xyz: [-0.11, 0.18, 0]
+          rpy: [0, 0, 0]
+#      part_4:
+#        type: order_part1
+#        pose:
+#          xyz: [0.0, 0.0, 0]
+#          rpy: ['pi', 0, 'pi']
 
 models_over_bins:
-  bin1:
+  bin5:
     models:
       gear_part:
         xyz_start: [0.1, 0.1, 0.0]
@@ -73,7 +102,7 @@ models_over_bins:
         rpy: [0, 0, 'pi/4']
         num_models_x: 2
         num_models_y: 2
-  bin5:
+  bin1:
     models:
       pulley_part:
         xyz_start: [0.15, 0.15, 0.0]
@@ -97,33 +126,33 @@ belt_models:
         xyz: [0.0, 0.0, 0.1]
         rpy: [0, 0, 'pi/2']
 
-sensor_blackout:
-  product_count: 2
-  duration: 50
-
-drops:
-  drop_regions:
-    above_agv_1:
-      frame: agv1::kit_tray_1
-      min:
-        xyz: [-0.4, -0.4, 0.0]
-      max:
-        xyz: [0.4, 0.4, 0.5]
-      destination:
-        xyz: [-0.15, 0.1, 0.15]
-        rpy: [0, 0, 0.2]
-      product_type_to_drop: gear_part
-    above_agv_2:
-      frame: agv2::kit_tray_2
-      min:
-        xyz: [-0.4, -0.4, 0.0]
-      max:
-        xyz: [0.4, 0.4, 0.5]
-      destination:
-        xyz: [0.15, 0.15, 0.15]
-        rpy: [0, 0, -0.2]
-      product_type_to_drop: disk_part
-
-faulty_products:
-  - gasket_part_3
-  - gear_part_3
+#sensor_blackout:
+#  product_count: 2
+#  duration: 50
+#
+#drops:
+#  drop_regions:
+#    above_agv_1:
+#      frame: agv1::kit_tray_1
+#      min:
+#        xyz: [-0.4, -0.4, 0.0]
+#      max:
+#        xyz: [0.4, 0.4, 0.5]
+#      destination:
+#        xyz: [-0.15, 0.1, 0.15]
+#        rpy: [0, 0, 0.2]
+#      product_type_to_drop: gear_part
+#    above_agv_2:
+#      frame: agv2::kit_tray_2
+#      min:
+#        xyz: [-0.4, -0.4, 0.0]
+#      max:
+#        xyz: [0.4, 0.4, 0.5]
+#      destination:
+#        xyz: [0.15, 0.15, 0.15]
+#        rpy: [0, 0, -0.2]
+#      product_type_to_drop: disk_part
+#
+#faulty_products:
+#  - gasket_part_3
+#  - gear_part_3
