@@ -121,6 +121,7 @@ private:
     std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_bin_unreachable;
 //    std::unordered_map<std::string, unsigned int> belt_part_counter; // map which calculate # of part_type from belt
 
+    std::map<std::string, std::vector<std::pair<geometry_msgs::Pose , geometry_msgs::Pose> > > parts_back_from_tray;
 
     RobotController* this_arm;
     RobotController* that_arm;
@@ -188,7 +189,7 @@ public:
     void PickAndPlaceFromBelt(geometry_msgs::Pose updated_pose,
             std::string product_type, int agv_id, int incoming_part_counter, RobotController& arm);
     void  PutPartsIntoOtherTray(geometry_msgs::Pose pick_pose,
-            geometry_msgs::Pose drop_pose, std::string product_type);
+            geometry_msgs::Pose drop_pose, std::string product_type, int flag, RobotController& arm_x, RobotController& arm_y);
     void  RemoveBeltParts();
     void  AddBeltParts();
 

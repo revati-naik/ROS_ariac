@@ -1438,9 +1438,32 @@ void  AriacSensorManager::WhatToModify(){
 
                             std::cout << "[AriacSensorManager][WhatToModify] : Update pose for conv belt part!! : " << update_pose << endl;
 
-                            order_update_copy[built_part_type].erase(std::remove(order_update_copy[built_part_type].begin(),
-                                    order_update_copy[built_part_type].end(), update_pose),
-                                            order_update_copy[built_part_type].end());
+                            // Here we need to compare the belt part vectors in both the maps.
+                            // Delete the ones that are not matching, retain the one that are matching.
+
+                            auto vect_built = built_kit_product_type_pose_[built_part_type];
+                            auto vect_update = order_update_copy[built_part_type];
+
+                            for (auto vect_up_part : vect_update){
+
+                                auto it = std::find(vect_built.begin(), vect_built.end(), vect_up_part);
+
+                                if(it == vect_built.end()){
+
+                                    // If not found
+                                    order_update_copy[built_part_type].erase(std::remove(order_update_copy[built_part_type].begin(),
+                                            order_update_copy[built_part_type].end(), vect_up_part),
+                                                    order_update_copy[built_part_type].end());
+
+                                    parts_back_from_tray[built_part_type].emplace_back(make_pair(vect_up_part, built_pose));
+                                    break;
+                                }
+                            }
+
+//                            order_update_copy.erase(built_part_type);
+//                            order_update_copy[built_part_type].erase(std::remove(order_update_copy[built_part_type].begin(),
+//                                    order_update_copy[built_part_type].end(), update_pose),
+//                                            order_update_copy[built_part_type].end());
 
                         }else{
                             // Else add to parts_to_remove_product_type_pose_
@@ -1467,7 +1490,9 @@ void  AriacSensorManager::WhatToAdd(){
 
     for(auto const& pair : order_update_copy){
 
-        NumPartsToAdd += pair.second.size();
+        if(pair.second.size() > 0){
+            NumPartsToAdd += pair.second.size();
+        }
     }
 
     std::cout << "[AriacSensorManager][WhatToAdd] : Num of parts to add : " << "\n";
@@ -1475,7 +1500,7 @@ void  AriacSensorManager::WhatToAdd(){
 }
 
 void  AriacSensorManager::PutPartsIntoOtherTray(geometry_msgs::Pose pick_pose,
-        geometry_msgs::Pose drop_pose, std::string product_type){
+        geometry_msgs::Pose drop_pose, std::string product_type, int flag, RobotController& arm_x, RobotController& arm_y){
     // --- This function will place a conveyor belt part from one tray into the other tray
     // --- This function will need the pose from where to pickup and where to drop.
     // --- This function will use both the arms to pass the part by placing the part at the center of the rail
@@ -1483,26 +1508,30 @@ void  AriacSensorManager::PutPartsIntoOtherTray(geometry_msgs::Pose pick_pose,
     // --- What should the drop pose be ?? This can be the same pick_up pose but in other tray's frame
 
     int Other_tray_ID;
+    int This_tray_ID;
     int agv_id = agv_id_global;
 
-    if(agv_id == 1) {
-        this_arm = &arm1;
-        that_arm = &arm2;
+
+    if(flag == 0) {
+        this_arm = &arm_x;
+        that_arm = &arm_y;
         Other_tray_ID = 2;
+        This_tray_ID = 1;
         // that_arm->SendRobotTo("linear_arm_actuator_joint", -1.18);
         // that_arm->SendRobotTo(that_arm->home_joint_pose_1);
     }
-    else {
-        this_arm = &arm2;
-        that_arm = &arm1;
-        Other_tray_ID =1;
+    else if(flag == 1){
+        this_arm = &arm_y;
+        that_arm = &arm_x;
+        Other_tray_ID = 1;
+        This_tray_ID = 2;
         // that_arm->SendRobotTo("linear_arm_actuator_joint", 1.18);
         // that_arm->SendRobotTo(that_arm->home_joint_pose_1);
     }
 
     // Pick the part with the KitBuildingARM
     this_arm->SendRobotTo(this_arm->home_joint_pose_1);
-    auto part_pose = kitToWorld(pick_pose, agv_id);
+    auto part_pose = kitToWorld(pick_pose, This_tray_ID);
 
     if (product_type == "pulley_part")
         part_pose.position.z += 0.08;
@@ -1578,9 +1607,13 @@ void  AriacSensorManager::RemoveBeltParts(){
         auto part_type = pair.first;
 
         for (auto part_pose : pair.second){
-            std::cout << "[AriacSensorManager][RemoveBeltParts] : belt part pose to remove from kit " << part_pose << std::endl;
+//            std::cout << "[AriacSensorManager][RemoveBeltParts] : belt part pose to remove from kit " << part_pose << std::endl;
 
-            PutPartsIntoOtherTray(part_pose,part_pose,part_type);
+            if(agv_id_global == 1){
+                PutPartsIntoOtherTray(part_pose,part_pose,part_type, 0, arm1, arm2);
+            }else{
+                PutPartsIntoOtherTray(part_pose,part_pose,part_type, 0, arm2, arm1);
+            }
 
         }
     }
@@ -1588,14 +1621,23 @@ void  AriacSensorManager::RemoveBeltParts(){
 
 void  AriacSensorManager::AddBeltParts(){
 
-    for(auto const& pair : parts_to_place_in_other_tray){
-        std::cout << "[AriacSensorManager][AddBeltParts] : part type to remove " << pair.first << std::endl;
+        for(auto const& pair : parts_back_from_tray){
+        std::cout << "[AriacSensorManager][AddBeltParts] : part type to Add " << pair.first << std::endl;
         auto part_type = pair.first;
+        auto drop_pick_pair = pair.second;
 
-        for (auto part_pose : pair.second){
-            std::cout << "[AriacSensorManager][AddBeltParts] : part pose to remove " << part_pose << std::endl;
+        for (auto const& pair : drop_pick_pair){
 
-            PutPartsIntoOtherTray(part_pose,part_pose,part_type);
+            auto drop_pose = pair.first;
+            auto pick_pose = pair.second;
+
+//            std::cout << "[AriacSensorManager][AddBeltParts] : part pose to remove " << part_pose << std::endl;
+
+            if(agv_id_global == 1){
+                PutPartsIntoOtherTray(pick_pose,drop_pose,part_type, 1, arm1, arm2);
+            }else{
+                PutPartsIntoOtherTray(pick_pose,drop_pose,part_type, 1, arm2, arm1);
+            }
 
         }
     }
@@ -1677,18 +1719,20 @@ void AriacSensorManager::addParts(int agv_id){
 
         auto part_type = pair.first;
 
-        for(auto part_pose : pair.second){
+        if(pair.second.size() >0){
 
-            std::pair<std::string,geometry_msgs::Pose> type_pose_pair;
-            type_pose_pair.first = part_type;
-            type_pose_pair.second = part_pose;
+            for(auto part_pose : pair.second){
 
-            if (agv_id == 1){
-                PickAndPlace(type_pose_pair, agv_id, arm1);
-            }else if(agv_id ==2){
-                PickAndPlace(type_pose_pair, agv_id, arm2);
+                std::pair<std::string,geometry_msgs::Pose> type_pose_pair;
+                type_pose_pair.first = part_type;
+                type_pose_pair.second = part_pose;
+
+                if (agv_id == 1){
+                    PickAndPlace(type_pose_pair, agv_id, arm1);
+                }else if(agv_id ==2){
+                    PickAndPlace(type_pose_pair, agv_id, arm2);
+                }
             }
-
         }
     }
 }
@@ -1811,8 +1855,23 @@ void AriacSensorManager::UpdateKit(int agv_id){
             }
         }
 
+
+        for(auto const& pair : parts_back_from_tray){
+
+            auto part_type = pair.first;
+            auto droppick_pair = pair.second;
+
+            std::cout << "[AriacSensorManager][UpdateKit] : After whatToModify part type in parts_back_from_tray is " << pair.first << std::endl;
+
+            for (auto const& pa: droppick_pair){
+                std::cout << "[AriacSensorManager][UpdateKit] : After whatToModify drop_pose in parts_back_from_tray " << pa.first << std::endl;
+                std::cout << "[AriacSensorManager][UpdateKit] : After whatToModify pick_pose in parts_back_from_tray " << pa.second << std::endl;
+            }
+        }
+
+
         // Call AddBeltParts() to put the parts back into the Build Kit Tray
-//        AddBeltParts();
+        AddBeltParts();
 
         // Call the function to addParts()
         addParts(agv_id);  // here we add new parts

@@ -143,7 +143,7 @@ RobotController::RobotController(std::string arm_id) :
 
         belt_pickup_pose.position.x = 1.22;
         belt_pickup_pose.position.y = -1.75;
-        belt_pickup_pose.position.z = 0.91;
+        belt_pickup_pose.position.z = 0.905;
         belt_pickup_pose.orientation.x = 0;
         belt_pickup_pose.orientation.y = 0.707;
         belt_pickup_pose.orientation.z = 0;
