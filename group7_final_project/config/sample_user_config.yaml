@@ -9,7 +9,7 @@ sensors:
     pose:
       # xyz: [1.6, 0.926964, 0.91]
       # xyz: [1.6, 1.818089, 0.91]
-      xyz: [1.6, -1.35, 0.91]
+      xyz: [1.6, -1.38, 0.91]
       rpy: [0, 0, 'pi']
   break_beam_3:
     type: break_beam
@@ -61,8 +61,13 @@ sensors:
   lc_agv_1:
     type: logical_camera
     pose:
-      xyz: [0.247088, 3.402534, 1.383304]
-      rpy: [1.282268, 1.548405, -0.278746]
+      xyz: [0.474900, 3.158375, 1.199988]
+      rpy: [-3.131394, 1.237324, -3.114517]
+  lc_agv_2:
+    type: logical_camera
+    pose:
+      xyz: [0.289732, -3.161251, 1.305936]
+      rpy: [-1.635342, 1.567451, -1.617904]
 
 #  laser_profiler_1:
 #    type: laser_profiler

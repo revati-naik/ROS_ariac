@@ -67,6 +67,15 @@ RobotController::RobotController(std::string arm_id) :
         conveyer_pose["wrist_2_joint"] = -1.57;
         conveyer_pose["wrist_3_joint"] = -1.04;
 
+        rail_pick_trans_pose["linear_arm_actuator_joint"] = 0.42;
+        rail_pick_trans_pose["shoulder_pan_joint"] = -1.57;
+        rail_pick_trans_pose["shoulder_lift_joint"] = -1.07;
+        rail_pick_trans_pose["elbow_joint"] = 1.75;
+        rail_pick_trans_pose["wrist_1_joint"] = 4.02;
+        rail_pick_trans_pose["wrist_2_joint"] = -1.57;
+        rail_pick_trans_pose["wrist_3_joint"] = 0;
+
+
         belt_pickup_pose.position.x = 1.22;
         belt_pickup_pose.position.y = 1.418089;
         belt_pickup_pose.position.z = 0.91;
@@ -116,6 +125,14 @@ RobotController::RobotController(std::string arm_id) :
         conveyer_pose["wrist_2_joint"] = -1.53;
         conveyer_pose["wrist_3_joint"] = 0.91;
 
+        rail_pick_trans_pose["linear_arm_actuator_joint"] = -0.42;
+        rail_pick_trans_pose["shoulder_pan_joint"] = 1.57;
+        rail_pick_trans_pose["shoulder_lift_joint"] = -1.07;
+        rail_pick_trans_pose["elbow_joint"] = 1.75;
+        rail_pick_trans_pose["wrist_1_joint"] = 4.02;
+        rail_pick_trans_pose["wrist_2_joint"] = -1.57;
+        rail_pick_trans_pose["wrist_3_joint"] = 0;
+
         throw_away_pose.position.x = 0.2-0.4;
         throw_away_pose.position.y = -3.35 + 0.5;
         throw_away_pose.position.z = 0.85 + 0.2;
@@ -126,7 +143,7 @@ RobotController::RobotController(std::string arm_id) :
 
         belt_pickup_pose.position.x = 1.22;
         belt_pickup_pose.position.y = -1.75;
-        belt_pickup_pose.position.z = 0.91;
+        belt_pickup_pose.position.z = 0.905;
         belt_pickup_pose.orientation.x = 0;
         belt_pickup_pose.orientation.y = 0.707;
         belt_pickup_pose.orientation.z = 0;
