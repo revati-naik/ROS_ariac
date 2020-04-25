@@ -17,15 +17,14 @@ RobotController::RobotController(std::string arm_id) :
     armSpinner.start();
     ROS_WARN("[RobotController]:[Constructor]: Called Class");
 
-    robot_move_group_.setPlanningTime(100);
+//    robot_move_group_.setPlanningTime(100);
+    robot_move_group_.setPlanningTime(50);
     robot_move_group_.setNumPlanningAttempts(20);
     robot_move_group_.setPlannerId("RRTConnectkConfigDefault");
     robot_move_group_.setMaxVelocityScalingFactor(0.9);
     robot_move_group_.setMaxAccelerationScalingFactor(0.9);
     // robot_move_group_.setEndEffector("moveit_ee");
     robot_move_group_.allowReplanning(true);
-
-
 
     home_joint_pose_1["linear_arm_actuator_joint"] = 0;
     home_joint_pose_1["shoulder_pan_joint"] = 3.14;
@@ -68,13 +67,13 @@ RobotController::RobotController(std::string arm_id) :
         conveyer_pose["wrist_3_joint"] = -1.04;
 
         rail_pick_trans_pose["linear_arm_actuator_joint"] = 0.42;
-        rail_pick_trans_pose["shoulder_pan_joint"] = -1.57;
+//        rail_pick_trans_pose["shoulder_pan_joint"] = -1.57;
+        rail_pick_trans_pose["shoulder_pan_joint"] = 4.71;
         rail_pick_trans_pose["shoulder_lift_joint"] = -1.07;
         rail_pick_trans_pose["elbow_joint"] = 1.75;
         rail_pick_trans_pose["wrist_1_joint"] = 4.02;
         rail_pick_trans_pose["wrist_2_joint"] = -1.57;
         rail_pick_trans_pose["wrist_3_joint"] = 0;
-
 
         belt_pickup_pose.position.x = 1.22;
         belt_pickup_pose.position.y = 1.418089;
@@ -95,6 +94,8 @@ RobotController::RobotController(std::string arm_id) :
         this->SendRobotTo(home_joint_pose_1);
 
         offset_ = 0.02;
+//        offset_ = 0.005;
+        Busy = false;
     }
     else{
         ROS_INFO_STREAM("Arm2 should go home");
@@ -143,15 +144,19 @@ RobotController::RobotController(std::string arm_id) :
 
         belt_pickup_pose.position.x = 1.22;
         belt_pickup_pose.position.y = -1.75;
-        belt_pickup_pose.position.z = 0.905;
+        belt_pickup_pose.position.z = 0.91;
         belt_pickup_pose.orientation.x = 0;
         belt_pickup_pose.orientation.y = 0.707;
         belt_pickup_pose.orientation.z = 0;
         belt_pickup_pose.orientation.w = 0.707;
 
-        offset_ = 0.0275;
+//        offset_ = 0.0275;
+//        offset_ = 0.005;
+        offset_ = 0.02;
 
         this->SendRobotTo(home_joint_pose_1);
+        Busy = false;
+
 
     }
 
@@ -294,7 +299,7 @@ void RobotController::SendRobotTo(std::map<std::string, double> desire_joint_sta
     armSpinner.start();
     if (this->Planner()) {
         robot_move_group_.move();
-        ros::Duration(1).sleep();
+        ros::Duration(0.5).sleep();
     }
 }
 
@@ -305,7 +310,7 @@ void RobotController::RobotGoHome() {
     armSpinner.start();
     if (this->Planner()) {
         robot_move_group_.move();
-        ros::Duration(1).sleep();
+        ros::Duration(0.5).sleep();
     }
 }
 
@@ -368,13 +373,13 @@ bool RobotController::DropPart(geometry_msgs::Pose part_pose) {
         part_pose.position.z += offset_;
         temp_pose.position.z = part_pose.position.z + 0.5;
         this->GoToTarget({temp_pose, part_pose});
-        ros::Duration(1.0).sleep();
+//        ros::Duration(0.5).sleep();
         // ROS_INFO_STREAM("Actuating the gripper...");
         this->GripperToggle(false);
     }
 
     drop_flag_ = false; // Dropping process completed! Dropping successful
-    ros::Duration(0.5).sleep(); // I hope in this period gripper_state_ gets updated.
+    ros::Duration(0.3).sleep(); // I hope in this period gripper_state_ gets updated.
 
     ROS_INFO_STREAM("[RobotController]:[DropPart]: After dropping Gripper State : " << gripper_state_);
 //    ROS_INFO_STREAM("[RobotController]:[DropPart]: After dropping Activated or not? " << int(gripper_service_.response.success));
@@ -424,14 +429,14 @@ bool RobotController::DropPart2(geometry_msgs::Pose part_pose) {
         part_pose.position.z += offset_;
         temp_pose.position.z = part_pose.position.z + 0.5;
         this->GoToTarget({temp_pose, part_pose});
-        ros::Duration(1.0).sleep();
+//        ros::Duration(1.0).sleep();
         ROS_INFO_STREAM("y_comp = " << y_comp);
         this->SendRobotTo("wrist_2_joint", - y_comp);
         this->GripperToggle(false);
     }
 
     drop_flag_ = false; // Dropping process completed! Dropping successful
-    ros::Duration(0.5).sleep(); // I hope in this period gripper_state_ gets updated.
+    ros::Duration(0.3).sleep(); // I hope in this period gripper_state_ gets updated.
 
     ROS_INFO_STREAM("[RobotController]:[DropPart]: After dropping Gripper State : " << gripper_state_);
 //    ROS_INFO_STREAM("[RobotController]:[DropPart]: After dropping Activated or not? " << int(gripper_service_.response.success));

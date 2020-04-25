@@ -93,6 +93,8 @@ private:
     osrf_gear::LogicalCameraImage current_parts_4_;
     osrf_gear::LogicalCameraImage current_parts_5_;
     osrf_gear::LogicalCameraImage current_parts_6_;
+    osrf_gear::LogicalCameraImage current_parts_agv1_;
+    osrf_gear::LogicalCameraImage current_parts_agv2_;
 
     bool  cam_1_, cam_2_,cam_3_, cam_4_, cam_5_,cam_6_;
     bool Flag_updateKit;
@@ -122,6 +124,17 @@ private:
 //    std::unordered_map<std::string, unsigned int> belt_part_counter; // map which calculate # of part_type from belt
 
     std::map<std::string, std::vector<std::pair<geometry_msgs::Pose , geometry_msgs::Pose> > > parts_back_from_tray;
+
+    std::map<std::string, std::vector<geometry_msgs::Pose>> current_tray1_elements;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> current_tray2_elements;
+
+
+    std::map<std::string, std::vector<geometry_msgs::Pose>> current_belt_parts_on_tray1;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> current_belt_parts_on_tray2;
+
+
+//    std::vector<geometry_msgs::Pose> partsDroppedOnTray1;// Parts dropped on kit
+//    std::vector<geometry_msgs::Pose> partsDroppedOnTray2;// Parts dropped on kit
 
     RobotController* this_arm;
     RobotController* that_arm;
@@ -192,9 +205,11 @@ public:
             geometry_msgs::Pose drop_pose, std::string product_type, int flag, RobotController& arm_x, RobotController& arm_y);
     void  RemoveBeltParts();
     void  AddBeltParts();
-
-
-//    void grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr&);
+    std::map<std::string, std::vector<geometry_msgs::Pose>> getCurrentParts(int tray_id);
+    std::pair<bool ,geometry_msgs::Pose> VerifyDropPose(geometry_msgs::Pose drop_pose,
+            std::string part_type, std::map<std::string, std::vector<geometry_msgs::Pose>>& previous_tray_elements, int tray_id);
+    bool comparePose(geometry_msgs::Pose Pose1, geometry_msgs::Pose Pose2);
+    //    void grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr&);
 //    void lc_agv_1_callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
 //    void grab_gear();
 
