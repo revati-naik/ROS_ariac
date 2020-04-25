@@ -51,6 +51,7 @@ public:
     std::map<std::string, double> conveyer_pose;
     std::map<std::string, double> rail_pick_trans_pose;
     geometry_msgs::Pose belt_pickup_pose;
+    bool Busy;
 
     std::map<std::string, double> check_qc_pose;
     geometry_msgs::Pose throw_away_pose;
