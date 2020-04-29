@@ -96,10 +96,20 @@ belt_models:
       pose:
         xyz: [0.0, 0.0, 0.1]
         rpy: [0, 0, 'pi/2']
+  # disk_part:
+  #   20.0:
+  #     pose:
+  #       xyz: [0.0, 0.0, 0.1]
+  #       rpy: [0, 0, 'pi/2']
+  # gear_part:
+  #   5.0:
+  #     pose:
+  #       xyz: [0.0, 0.0, 0.1]
+  #       rpy: [0, 0, 'pi/2']
 
 #sensor_blackout:
-#  product_count: 2
-#  duration: 50
+#  product_count: 1
+#  duration: 2
 
 drops:
   drop_regions:
@@ -113,6 +123,7 @@ drops:
         xyz: [-0.15, 0.1, 0.15]
         rpy: [0, 0, 0.2]
       product_type_to_drop: gear_part
+
     above_agv_2:
       frame: agv2::kit_tray_2
       min:
@@ -120,7 +131,7 @@ drops:
       max:
         xyz: [0.4, 0.4, 0.5]
       destination:
-        xyz: [0.15, 0.15, 0.15]
+        xyz: [0.15, 0, 0.15]
         rpy: [0, 0, -0.2]
       product_type_to_drop: disk_part
 

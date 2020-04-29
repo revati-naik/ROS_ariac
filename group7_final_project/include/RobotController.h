@@ -40,7 +40,7 @@ public:
     void GripperToggle(const bool& state);
     void GripperCallback(const osrf_gear::VacuumGripperState::ConstPtr& grip);
     void GripperStateCheck(geometry_msgs::Pose pose);
-    bool PickPart(const geometry_msgs::Pose& part_pose);
+    bool PickPart(const geometry_msgs::Pose& part_pose, bool pick_once=false);
     void RobotGoHome();
     double getRotationCompensate(const geometry_msgs::Pose&, 
         const geometry_msgs::Pose&);
@@ -56,6 +56,18 @@ public:
     std::map<std::string, double> check_qc_pose;
     geometry_msgs::Pose throw_away_pose;
 
+    std::map<std::string, double> RailLeft; // Flipping: Default side Arm 1 Position
+    std::map<std::string, double> RailRight; // Flipping: Default side Arm 2 Position
+
+
+    // a 2 by 2 matrix with specific (x,y,z) world coordinates for placing multiple parts from the belt
+    std::vector<geometry_msgs::Pose> tray_store_poses;
+    bool gripper_state_;
+
+//    bool checkRobotPose(std::map<std::string, double>);
+//    bool PickPart_advance(const geometry_msgs::Pose&, bool pick_once=false);
+
+    std::string id;
 private:
     // subscriber of other arm's linear actuactor pose
     ros::Subscriber line_act_pose_sub;
@@ -101,10 +113,7 @@ private:
     double roll_def_,pitch_def_,yaw_def_;
     tf::Quaternion q;
     int counter_;
-    bool gripper_state_, drop_flag_;
-
-    //////////modified
-    std::string id;
+    bool  drop_flag_;
 
     double y_comp;
 };

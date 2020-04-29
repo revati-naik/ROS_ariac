@@ -9,20 +9,25 @@ sensors:
     pose:
       # xyz: [1.6, 0.926964, 0.91]
       # xyz: [1.6, 1.818089, 0.91]
-      xyz: [1.6, -1.50, 0.91]
+      xyz: [1.6, -1.48, 0.91]
       rpy: [0, 0, 'pi']
   break_beam_3:
     type: break_beam
     pose:
       # xyz: [1.6, 0.926964, 0.91]
       # xyz: [1.6, 1.818089, 0.91]
-      xyz: [1.6, 1.818089, 0.91]
+      xyz: [1.6, 1.688089, 0.91]
       rpy: [0, 0, 'pi']
-  proximity_sensor_1:
-    type: proximity_sensor
+  break_beam_coming:
+    type: break_beam
     pose:
-      xyz: [0.95, 2.6, 0.92]
-      rpy: [0, 0, 0]
+      xyz: [1.6, 4.917020, 0.91]
+      rpy: [0, 0, 'pi']
+#  proximity_sensor_1:
+#    type: proximity_sensor
+#    pose:
+#      xyz: [0.95, 2.6, 0.92]
+#      rpy: [0, 0, 0]
   lc_belt:
     type: logical_camera
     pose:
