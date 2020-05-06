@@ -10,3 +10,12 @@ Group Members:
 6. Srujan Panuganti
 
 M.ENG Robotics 2020, University of Maryland
+
+## **Our Final Output**
+
+<p align="center">
+<img src="gifs/1.gif" alt="Pick and Place">
+</p>
+<p align="center">
+<em>Pick and Place</em>
+</p>
