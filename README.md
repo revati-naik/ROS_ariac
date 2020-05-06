@@ -14,8 +14,8 @@ M.ENG Robotics 2020, University of Maryland
 ## **Our Final Output**
 
 <p align="center">
-<img src="gifs/1.gif" alt="Pick and Place">
+<img src="gifs//kit_building.gif" alt="kit Building Output">
 </p>
 <p align="center">
-<em>Pick and Place</em>
+<em>Kit Building Output</em>
 </p>
