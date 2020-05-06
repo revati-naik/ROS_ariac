@@ -1,7 +1,3 @@
-//
-// Created by zeid on 2/27/20.
-//
-
 #include "order_manager.h"
 #include <osrf_gear/AGVControl.h>
 #include <ros/ros.h>
