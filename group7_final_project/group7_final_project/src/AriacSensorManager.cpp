@@ -123,55 +123,16 @@ void AriacSensorManager::order_callback(const osrf_gear::Order::ConstPtr & order
     ROS_INFO_STREAM("[AriacSensorManager][order_callback]:Received order:\n" << *order_msg);
     received_orders_.push_back(*order_msg);
     // setDesiredParts();
-
-    auto order_id = order_msg->order_id;
-    std::string update_id = "update";
-
-    if (order_id.find(update_id) != std::string::npos) {
-        std::cout << "It's an update found!" << '\n';
-        Flag_updateKit = true;
-        ROS_INFO_STREAM("[AriacSensorManager][order_callback]: Flag Update Set to true:\n" << Flag_updateKit);
-    }else{
-        ROS_INFO_STREAM("[AriacSensorManager][order_callback]: Not an Update");
-    }
-
     order_receiving_flag = true;
     order_counter += 1;
-}
 
-void AriacSensorManager::ReInit(){
+    if (order_counter >1) {
+        Flag_updateKit = true;
+        ROS_INFO_STREAM("[AriacSensorManager][order_callback]:Flag Update Set to true:\n" << Flag_updateKit);
 
-    Flag_updateKit = false;
-    NumPartsToRemove = 0;
-    NumPartsToModify = 0;
-    NumPartsToAdd = 0;
-    product_type_pose_ = {};
-    order_update_product_type_pose_ = {};
-    order_update_copy = {};
-    built_kit_product_type_pose_ = {};
-    parts_to_remove_product_type_pose_ = {};
-    parts_to_place_in_other_tray = {};
-    parts_from_belt = {};
-    parts_from_belt_copy = {};
-    parts_from_belt_temp = {};
-    parts_from_bin_reachable = {};
-    parts_from_bin_unreachable = {};
-    parts_back_from_tray = {};
-    current_tray1_elements = {};
-    current_tray2_elements = {};
-    current_belt_parts_on_tray1={};
-    current_belt_parts_on_tray2={};
-    wrong_poses_map = {};
-    wrong_poses_pair_belt = {};
-    wrong_poses_pair_other_tray = {};
-    correct_drop_later = false;
-    belt_drop_later = false;
-    correct_other_tray_later = {};
-    tray_store_usage = {};
-    OccupiedSpacesOnTray = {};
-    sensor_black_out_global = {};
-    black_out_occured = false;
-
+    }else{
+        ExecuteOrder();
+    }
 }
 
 void AriacSensorManager::buildUpdatedKitMap(){
@@ -1618,8 +1579,6 @@ bool AriacSensorManager::FlipPart(RobotController* owner, RobotController* helpe
 
         // Arm1 drops the part.
         railDropPickPose.position.z = 0.9 + 0.2;
-        helper->SendRobotTo(helper->rail_pick_trans_pose); // -- edited: 4/30
-//        ROS_WARN_STREAM("[ASM]:[FlipPart]: Sending Arm1 to this pose: " << railDropPickPose);
         helper->GoToTarget1(railDropPickPose);
         helper->GripperToggle(false);
         ROS_INFO_STREAM("[ASM][FlipPart]: Arm1 dropped the part.");
@@ -1665,18 +1624,11 @@ bool AriacSensorManager::PickAndPlace(const std::pair<std::string, geometry_msgs
         ROS_WARN_STREAM("Product frame >>>> " << product_frame);
         auto part_pose = GetPartPose("/world", product_frame);
 
-        geometry_msgs::Pose above_rail_center;
-        // place the desired part on the rail
-        above_rail_center.position.x = 0.3; // edit: 0.3
-        above_rail_center.position.y = 0;
-        above_rail_center.position.z = 0.9 + 0.075; // check if 0.075 makes it faster and won't crash on the rail
-        above_rail_center.orientation.x = part_pose.orientation.x;
-        above_rail_center.orientation.y = part_pose.orientation.y;
-        above_rail_center.orientation.z = part_pose.orientation.z;
-        above_rail_center.orientation.w = part_pose.orientation.w;
-
         if (product_type == "pulley_part")
             part_pose.position.z += 0.062;
+
+        geometry_msgs::Pose above_rail_center;
+
 
         // if the product frame name contains substring indicating it is unreachable
         if ((product_frame.find("lc_bin_" + std::to_string(unreachable[0])) != -1) ||
@@ -1694,9 +1646,17 @@ bool AriacSensorManager::PickAndPlace(const std::pair<std::string, geometry_msgs
             }
 
             that_arm->SendRobotTo(that_arm->home_joint_pose_2);
+            // place the desired part on the rail
+            above_rail_center.position.x = 0.3;
+            above_rail_center.position.y = 0;
+            above_rail_center.position.z = 0.9 + 0.075; // check if 0.075 makes it faster and won't crash on the rail
 
             if (product_type == "pulley_part")
                 above_rail_center.position.z += 0.062; // check if dropping pulley_part on the rail correctly
+            above_rail_center.orientation.x = part_pose.orientation.x;
+            above_rail_center.orientation.y = part_pose.orientation.y;
+            above_rail_center.orientation.z = part_pose.orientation.z;
+            above_rail_center.orientation.w = part_pose.orientation.w;
 
             ROS_INFO_STREAM("[AriacSensorManager]:[PickAndPlace]: Drop Pose : " << above_rail_center);
 
@@ -1714,7 +1674,6 @@ bool AriacSensorManager::PickAndPlace(const std::pair<std::string, geometry_msgs
 
             this_arm->SendRobotTo(this_arm->rail_pick_trans_pose); // go to the transtion pose for picking part on the rail
         }
-
 
         bool failed_pick = this_arm->PickPart(part_pose);
         // ros::Duration(0.5).sleep();
@@ -1747,16 +1706,8 @@ bool AriacSensorManager::PickAndPlace(const std::pair<std::string, geometry_msgs
             }
 
             if (isFlippingRequired){
-                while (arm_grab_belt) {
-                    ROS_INFO_STREAM_THROTTLE(10, "[PickAndPlace]: Inside Flipping Section. Waiting arm to pick up from the belt inside Flipping Part");
-                }
-                arm_in_middle = true;
-                this_arm->SendRobotTo(this_arm->home_joint_pose_2);
                 this_arm->SendRobotTo(this_arm->rail_pick_trans_pose);
-//                ROS_WARN_STREAM("[ASM]:[PickAndPlace]: Position passed to Flip Part is: " << above_rail_center);
                 this->FlipPart(this_arm, that_arm, above_rail_center);
-                arm_in_middle = false;
-                isFlippingRequired = false;
             }
         }
         // -------------------------------- Flip part completed -------------------------- //
@@ -1950,48 +1901,35 @@ void AriacSensorManager::SegregateBeltParts(const std::pair<std::string, geometr
 
 void AriacSensorManager::ExecuteOrder() 
 {
-    //ros::Duration(3.0).sleep();
-
     ROS_WARN(">>>>>> Executing order...");
     bool pick_n_place_success{false};
     ros::spinOnce();
-    ros::Duration(3.0).sleep();
-
-    ROS_INFO_STREAM("recieved orders size:" << received_orders_.size());
-
+    ros::Duration(1.0).sleep();
     for (const auto &order:received_orders_){
         auto order_id = order.order_id;
         auto shipments = order.shipments;
         int tray_index_counter = 0;
 
-        ROS_INFO_STREAM("Size of the received :" << received_orders_.size());
-        ROS_INFO_STREAM("order_id is  :" << order_id);
-
-        auto init_agv_ = shipments[0].agv_id.back();
-        int init_agv_id_ = (shipments[0].agv_id == "any") ? 1 : init_agv_ - '0';
-        agv_id_global =init_agv_id_;
+        for (const auto &shipment: shipments) // loop trough shipments and
+        {
+            auto agv = shipment.agv_id.back();
+            int agv_id = (shipment.agv_id == "any") ? 1 : agv - '0';
+            // ROS_INFO_STREAM("AGV ID: " << agv_id);
+            auto products = shipment.products;
+            for (const auto &product: products)
+            {
+                product_type_pose_.first = product.type;
+                product_type_pose_.second = product.pose;
+                SegregateBeltParts(product_type_pose_, agv_id);
+            }
+        }
+        parts_from_belt_copy = parts_from_belt;
 
         if (agv_id_global == 1) {
             belt_tray_id = 2;
         } else {
             belt_tray_id = 1;
         }
-
-        for (const auto &shipment: shipments) // loop trough shipments and
-        {
-            auto agv = shipment.agv_id.back();
-            int agv_id_ = (shipment.agv_id == "any") ? 1 : agv - '0';
-             ROS_INFO_STREAM("AGV ID: " << agv_id_);
-            auto products = shipment.products;
-            for (const auto &product: products)
-            {
-                product_type_pose_.first = product.type;
-                product_type_pose_.second = product.pose;
-                SegregateBeltParts(product_type_pose_, agv_id_);
-            }
-        }
-        parts_from_belt_copy = parts_from_belt;
-
 
         // parts_from_belt_temp = parts_from_belt; // for collecting enough number of parts from belt
         std::cout << "--------------------Belt Parts Needed in current order ----------------------" << std::endl;
@@ -2024,12 +1962,11 @@ void AriacSensorManager::ExecuteOrder()
             int agv_id = (shipment.agv_id == "any") ? 1 : agv - '0';
             agv_id_global = agv_id;
 
-
             if (agv_id_global == 1){
                 arm2.SendRobotTo(arm2.conveyer_pose);
                 bb_arm2_sub = sensor_nh_.subscribe("/ariac/break_beam_2_change", 10,
                                                    & AriacSensorManager::bb_arm2_callback, this);
-            }else if(agv_id_global == 2){
+            }else{
                 arm1.SendRobotTo(arm1.conveyer_pose);
                 bb_arm1_sub = sensor_nh_.subscribe("/ariac/break_beam_3_change", 10,
                                                    & AriacSensorManager::bb_arm1_callback, this);
@@ -2054,9 +1991,6 @@ void AriacSensorManager::ExecuteOrder()
             if(agv_id == belt_tray_id)
             { // 2          // 2
                 // get neede amount of belt part type from order->shipment->products
-
-                std::cout << "[ExecuteOrder]: Inside Big IF" << std::endl;
-
                 for (const auto &product: products)
                 {
                     ros::spinOnce();
@@ -2068,13 +2002,10 @@ void AriacSensorManager::ExecuteOrder()
                         int temp_index;
                         geometry_msgs::Pose part_pose;
                         bool belt_part_exists = false;
-                        ros::Time start_time = ros::Time::now();
-                        ros::Time right_now;
                         while (!belt_part_exists){
                             // check if this part type exists in the tray_store_usage
 
 //                            ROS_INFO_STREAM("[ExecuteOrder]: Inside the While Loop");
-
 
                             for (int i = 0; i < tray_store_usage[belt_tray_id - 1].size(); i++) {
                                 //                       2nd row --> kitTray2
@@ -2094,11 +2025,6 @@ void AriacSensorManager::ExecuteOrder()
                                     belt_part_exists = false;
                                 }
                             }
-                            right_now = ros::Time::now();
-                            if((right_now - start_time) > ros::Duration(30.0)){
-                                break;
-                            }
-                            //if the time is nore than this break
 //                            ROS_INFO_STREAM("[ExecuteOrder]: Outside the For Loop");
                         }
                         ROS_INFO_STREAM("[ExecuteOrder]: Outside the While Loop");
@@ -2217,8 +2143,6 @@ void AriacSensorManager::ExecuteOrder()
             }
             else
             {
-                std::cout << "[ExecuteOrder]: Inside Big ELSE" << std::endl;
-
                 // here we can loop separately through the parts_from_bin_reachable
                 // and parts_from_belt and parts_from_bin_unreachable parts_in_the_tray
                 for (auto const& pair : parts_from_bin_reachable)
@@ -2236,6 +2160,8 @@ void AriacSensorManager::ExecuteOrder()
                         built_kit_product_type_pose_[product_type_pose_.first].emplace_back(product_type_pose_.second);
                     }
                 }
+
+                std::cout << "[AriacSensorManager][ExecuteOrder] : Arm finished picking up from conveyor belt " <<std::endl;
 
                 for (auto const& pair : parts_from_bin_unreachable)
                 {
@@ -2361,6 +2287,7 @@ void AriacSensorManager::ExecuteOrder()
                         }
                     }
                 }
+
             }
 
             if(black_out_occured){
@@ -2374,11 +2301,10 @@ void AriacSensorManager::ExecuteOrder()
             if (Flag_updateKit){
                 buildUpdatedKitMap();
                 UpdateKit(agv_id);
-                Flag_updateKit = false;
             }
             if (agv_id_global == 1){
                 bb_arm2_sub.shutdown();
-            }else if (agv_id_global ==2){
+            }else{
                 bb_arm1_sub.shutdown();
             }
             SubmitAGV(agv_id);
@@ -2390,9 +2316,9 @@ void AriacSensorManager::ExecuteOrder()
             int finish=1;
             ROS_WARN_STREAM( "before going to start building the "
                              "next shipment black_out_occured is: " << black_out_occured);
+
         }
     }
-    ReInit();
 }
 
 

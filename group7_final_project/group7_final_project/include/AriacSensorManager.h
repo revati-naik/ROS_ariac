@@ -86,12 +86,12 @@ private:
     // Robot related
     RobotController arm1;
     RobotController arm2;
-//    std::map<std::string, double> arm2_check_qc_pose;
-//    std::map<std::string, double> arm2_transition_pose;
+    std::map<std::string, double> arm2_check_qc_pose;
+    std::map<std::string, double> arm2_transition_pose;
     // std::map<std::string, double> go_transition_pose;
     // std::map<std::string, double> back_transition_pose;
-//    std::map<std::string, double> arm1_bin_pose;
-//    std::map<std::string, double> arm1_check_qc_pose;
+    std::map<std::string, double> arm1_bin_pose;
+    std::map<std::string, double> arm1_check_qc_pose;
 
     bool arm1_busy;
     bool arm2_busy;
@@ -112,48 +112,48 @@ private:
     osrf_gear::LogicalCameraImage quality_image2;
 
     bool  cam_1_, cam_2_,cam_3_, cam_4_, cam_5_,cam_6_;
-    bool Flag_updateKit; // false
+    bool Flag_updateKit;
     int order_counter;
     int camera1_frame_counter_, camera2_frame_counter_, camera3_frame_counter_;
     int camera4_frame_counter_, camera5_frame_counter_, camera6_frame_counter_;
     std::map<std::string, std::vector<std::string>> product_frame_list_;
 
-    int NumPartsToRemove, NumPartsToModify, NumPartsToAdd;  // make zero
+    int NumPartsToRemove, NumPartsToModify, NumPartsToAdd;
 
     tf::TransformListener camera_tf_listener_;
     tf::StampedTransform camera_tf_transform_;
 
     std::pair<std::string,geometry_msgs::Pose> product_type_pose_;
 //    std::vector<geometry_msgs::Pose> empty_vector;
-    std::map<std::string, std::vector<geometry_msgs::Pose>> order_update_product_type_pose_;  //clear
-    std::map<std::string, std::vector<geometry_msgs::Pose>> order_update_copy;      //clear
+    std::map<std::string, std::vector<geometry_msgs::Pose>> order_update_product_type_pose_;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> order_update_copy;
 
-    std::map<std::string, std::vector<geometry_msgs::Pose>> built_kit_product_type_pose_;  //clear
-    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_to_remove_product_type_pose_;  //clear
+    std::map<std::string, std::vector<geometry_msgs::Pose>> built_kit_product_type_pose_;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_to_remove_product_type_pose_;
 //    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_to_place_in_other_tray;
-    std::map<std::string, std::vector<std::pair<geometry_msgs::Pose , geometry_msgs::Pose> > > parts_to_place_in_other_tray;  //clear
+    std::map<std::string, std::vector<std::pair<geometry_msgs::Pose , geometry_msgs::Pose> > > parts_to_place_in_other_tray;
 
 //    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_belt;
-    std::array<std::map<std::string, std::vector<geometry_msgs::Pose>>, 2> parts_from_belt;  //clear
-    std::array<std::map<std::string, std::vector<geometry_msgs::Pose>>, 2> parts_from_belt_copy;  //clear
-    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_belt_temp;  //clear
-    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_bin_reachable;  //clear
-    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_bin_unreachable;  //clear
+    std::array<std::map<std::string, std::vector<geometry_msgs::Pose>>, 2> parts_from_belt;
+    std::array<std::map<std::string, std::vector<geometry_msgs::Pose>>, 2> parts_from_belt_copy;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_belt_temp;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_bin_reachable;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> parts_from_bin_unreachable;
 //    std::unordered_map<std::string, unsigned int> belt_part_counter; // map which calculate # of part_type from belt
 
-    std::map<std::string, std::vector<std::pair<geometry_msgs::Pose , geometry_msgs::Pose> > > parts_back_from_tray;  // clear
+    std::map<std::string, std::vector<std::pair<geometry_msgs::Pose , geometry_msgs::Pose> > > parts_back_from_tray;
     std::vector<int> update_store_idxs;
 
-    std::map<std::string, std::vector<geometry_msgs::Pose>> current_tray1_elements;  //clear
-    std::map<std::string, std::vector<geometry_msgs::Pose>> current_tray2_elements; // clear
+    std::map<std::string, std::vector<geometry_msgs::Pose>> current_tray1_elements;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> current_tray2_elements;
 
 
-    std::map<std::string, std::vector<geometry_msgs::Pose>> current_belt_parts_on_tray1; //clear
-    std::map<std::string, std::vector<geometry_msgs::Pose>> current_belt_parts_on_tray2;  //clear
-    std::pair<std::string, geometry_msgs::Pose> wrong_poses_map;  //clear
-    std::pair<std::string, geometry_msgs::Pose> wrong_poses_pair_belt;  //clear
-    std::pair<std::string, geometry_msgs::Pose> wrong_poses_pair_correct;  //clear
-    std::pair<std::string, geometry_msgs::Pose> wrong_poses_pair_other_tray;  //clear
+    std::map<std::string, std::vector<geometry_msgs::Pose>> current_belt_parts_on_tray1;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> current_belt_parts_on_tray2;
+    std::pair<std::string, geometry_msgs::Pose> wrong_poses_map;
+    std::pair<std::string, geometry_msgs::Pose> wrong_poses_pair_belt;
+    std::pair<std::string, geometry_msgs::Pose> wrong_poses_pair_correct;
+    std::pair<std::string, geometry_msgs::Pose> wrong_poses_pair_other_tray;
 
 //    std::vector<geometry_msgs::Pose> partsDroppedOnTray1;// Parts dropped on kit
 //    std::vector<geometry_msgs::Pose> partsDroppedOnTray2;// Parts dropped on kit
@@ -164,20 +164,20 @@ private:
     int agv_id_global;
     int test_counter;
     bool belt_temp_flag;
-    bool correct_drop_later; // reainitialize
-    bool belt_drop_later;  // reinit
-    bool recorrect_later;  //reinit
-    bool correct_other_tray_later;  //reinit
+    bool correct_drop_later;
+    bool belt_drop_later;
+    bool recorrect_later;
+    bool correct_other_tray_later;
 
     // std::array<bool, 4> tray_1_store_usage;
     // std::array<bool, 4> tray_2_store_usage;
-    std::array<std::array<std::string, 4>, 2> tray_store_usage;  //clear
-    std::map<std::string, std::vector<geometry_msgs::Pose>> OccupiedSpacesOnTray; ////clear
+    std::array<std::array<std::string, 4>, 2> tray_store_usage;
+    std::map<std::string, std::vector<geometry_msgs::Pose>> OccupiedSpacesOnTray;
 
     int belt_tray_id;
     int belt_parts_need_num;
     bool sensor_black_out;
-    bool sensor_black_out_global;  //reinit
+    bool sensor_black_out_global;
 
     std::vector<bool> obejct_size;
     ros::Time current_time;
@@ -260,6 +260,9 @@ public:
             std::map<std::string, std::vector<geometry_msgs::Pose>>& previous_tray_elements, int tray_id);
 
     bool comparePose(geometry_msgs::Pose Pose1, geometry_msgs::Pose Pose2);
+    //    void grab_bin1(const osrf_gear::LogicalCameraImage::ConstPtr&);
+//    void lc_agv_1_callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
+//    void grab_gear();
 
     bool init_, everything_ready;
 
@@ -271,8 +274,10 @@ public:
 
     geometry_msgs::Pose TransformPoses(geometry_msgs::Pose part_pose, std::string src_coord,
                                                            const std::string& trg_coord);
+
     void CheckQualityRemoveNAdd(int tray_id);
-    void ReInit();
+
+//    std::string getPartTypeFromQC(const osrf_gear::LogicalCameraImage&, std::string, geometry_msgs::Pose);
 
 };
 
