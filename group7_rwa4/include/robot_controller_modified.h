@@ -1,6 +1,3 @@
-//
-// Created by zeid on 2/27/20.
-//
 
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
