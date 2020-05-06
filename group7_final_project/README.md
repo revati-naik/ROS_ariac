@@ -113,6 +113,13 @@ In terminal 4:
 </p>
 
 <p align="center">
+<img src="gifs/quality_check_faulty.gif" alt="Faulty Check">
+</p>
+<p align="center">
+<em>Faulty Check During Sensor Blackout</em>
+</p>
+
+<p align="center">
 <img src="gifs/3.gif" alt="In Process Order Update">
 </p>
 <p align="center">
@@ -120,5 +127,5 @@ In terminal 4:
 </p>
 
 
-Access the below link to see the whole video!
-https://drive.google.com/drive/folders/1rmu-_D3-2d6kRLswu9rlon-fbD_DuJh7?usp=sharing
+Access the below link to see multiple vidos of how our pipeline is working!
+https://drive.google.com/drive/folders/1DF2pgMkngMvCEMyj_yyr3MpZdI1tnsCo
