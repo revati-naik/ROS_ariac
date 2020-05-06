@@ -390,7 +390,7 @@ void RobotController::SendRobotTo(std::map<std::string, double> desire_joint_sta
     armSpinner.start();
     if (this->Planner()) {
         robot_move_group_.move();
-        ros::Duration(0.5).sleep();
+        ros::Duration(0.6).sleep();
     }
 }
 

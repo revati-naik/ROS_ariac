@@ -26,7 +26,7 @@ orders:
   order_0:
     announcement_condition: time
     announcement_condition_value: 0.0
-    destinations: [agv1, agv2]
+    destinations: [agv2, agv1]
     shipment_count: 2
     products:
       part_0:

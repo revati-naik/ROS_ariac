@@ -94,7 +94,7 @@ In terminal 4:
 
 	cd ~/catkin_ws
 	source devel/setup.bash
-    	rosrun group7_final_project main_node
+    rosrun group7_final_project main_node
 
 ## **See how it works**
 

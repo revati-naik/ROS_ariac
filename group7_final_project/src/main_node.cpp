@@ -56,6 +56,9 @@ int main(int argc, char ** argv) {
     ROS_INFO_STREAM("Wait for competition start...");
     start_competition(main_nh);
 
+    sensor.ExecuteOrder();
+
+
 //    ros::Duration(5).sleep();
 //    sensor.PickAndPlace();
 

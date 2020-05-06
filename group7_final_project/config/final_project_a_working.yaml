@@ -31,7 +31,7 @@ orders:
     shipment_count: 2
     products:
       part_0:
-        type: order_part1
+        type: order_part3
         pose:
           xyz: [0.11, -0.21, 0]
           rpy: [0 , 0, 'pi/2']
@@ -46,12 +46,12 @@ orders:
           xyz: [0.13, 0.16, 0]
           rpy: [0, 0, 0]
       part_3:
-        type: order_part4
+        type: order_part3
         pose:
           xyz: [-0.11, 0.18, 0]
           rpy: [0, 0, 0]
       part_4:
-        type: order_part5
+        type: order_part2
         pose:
           xyz: [0.0, 0.0, 0]
           rpy: ['pi', 0, 'pi']
@@ -86,36 +86,36 @@ orders:
 #        pose:
 #          xyz: [0.0, 0.0, 0]
 #          rpy: ['pi', 0, 'pi']
-  order_0_update_0:
-    announcement_condition: wanted_products
-    announcement_condition_value: 2
-    shipment_count: 1
-    products:
-      part_0:
-        type: order_part5
-        pose:
-          xyz: [0.11, -0.21, 0]
-          rpy: [0 , 0, 'pi/2']
-      part_1:
-        type: order_part2
-        pose:
-          xyz: [-0.11, -0.21, 0]
-          rpy: [0, 0, '-pi/2']
-      part_2:
-        type: order_part3
-        pose:
-          xyz: [0.13, 0.16, 0]
-          rpy: [0, 0, 0]
-      part_3:
-        type: order_part4
-        pose:
-          xyz: [-0.11, 0.18, 0]
-          rpy: [0, 0, 0]
-      part_4:
-        type: order_part1
-        pose:
-          xyz: [0.0, 0.0, 0]
-          rpy: ['pi', 0, 'pi']
+#  order_0_update_0:
+#    announcement_condition: wanted_products
+#    announcement_condition_value: 2
+#    shipment_count: 1
+#    products:
+#      part_0:
+#        type: order_part2
+#        pose:
+#          xyz: [0.11, -0.21, 0]
+#          rpy: [0 , 0, 'pi/2']
+#      part_1:
+#        type: order_part1
+#        pose:
+#          xyz: [-0.11, -0.21, 0]
+#          rpy: [0, 0, '-pi/2']
+#      part_2:
+#        type: order_part3
+#        pose:
+#          xyz: [0.13, 0.16, 0]
+#          rpy: [0, 0, 0]
+#      part_3:
+#        type: order_part3
+#        pose:
+#          xyz: [-0.11, 0.18, 0]
+#          rpy: [0, 0, 0]
+#      part_4:
+#        type: order_part5
+#        pose:
+#          xyz: [0.0, 0.0, 0]
+#          rpy: ['pi', 0, 'pi']
 
 models_over_bins:
   bin1:
@@ -159,7 +159,7 @@ belt_models:
         rpy: [0, 0, 'pi/2']
 
 sensor_blackout:
-  product_count: 3
+  product_count: 1
   duration: 50
 
 drops:
@@ -188,3 +188,4 @@ drops:
 faulty_products:
   - gasket_part_3
   - gear_part_5
+  - gear_part_4
