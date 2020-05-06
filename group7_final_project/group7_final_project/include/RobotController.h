@@ -1,7 +1,3 @@
-//
-// Created by zeid on 2/27/20.
-//
-
 #ifndef SRC_ROBOT_CONTROLLER_H
 #define SRC_ROBOT_CONTROLLER_H
 
